@@ -26,20 +26,30 @@ https://dev.to/muhammedarifp/creating-a-simple-hello-world-web-application-with-
 - SELECT \* FROM users;
 
 - CREATE TABLE users (
-  id SERIAL PRIMARY KEY, -- Unique ID (auto-incremented)
-  name VARCHAR(255) NOT NULL, -- User name, not null
-  email VARCHAR(255) NOT NULL, -- Email, not null
-  sub_id VARCHAR(50), -- Subscription ID or external identifier
-  verification_status BOOLEAN, -- Boolean for verification status
-  setup_status VARCHAR(50) -- Setup status (like 'completed', 'pending', etc.)
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  sub_id VARCHAR(50),
+  verification_status BOOLEAN,
+  setup_status VARCHAR(50),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
   );
 
-- INSERT INTO users (id, name, email, sub_id, verification_status, setup_status)
-  VALUES (
-  2,
-  'John Smith',
-  'john.smith@example.com',
-  'SUB123456abc',
-  TRUE,
-  'completed'
+- INSERT INTO users (
+  name,
+  email,
+  sub_id,
+  verification_status,
+  setup_status,
+  created_at,
+  updated_at
+  ) VALUES (
+  'John Doe',  
+   'john.doe@example.com',  
+   'SUB987654321',  
+   TRUE,  
+   'in_progress',  
+   NOW(),  
+   NOW()  
   );

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,9 +9,7 @@ import (
 	"time"
 
 	"github.com/Wigglor/webservice-v2/repository"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
+	"github.com/Wigglor/webservice-v2/router"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -62,9 +59,10 @@ func main() {
 	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	// defer cancel()
 
-	userHandler := NewUserHandler(userRepo)
+	userHandler := router.NewUserHandler(userRepo)
 	fmt.Println("after NewUserHandler")
-	router := chi.NewRouter()
+	router := router.Routes(userHandler)
+	/*router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://*", "https://*"},
@@ -76,29 +74,30 @@ func main() {
 	}))
 
 	router.Route("/api", func(r chi.Router) {
-		r.Get("/usersss", userHandler.GetUsers) // attaching a method to the App struct -> pointer receiver
+		r.Get("/users", userHandler.GetUsers)        // attaching a method to the App struct -> pointer receiver
+		r.Get("/user/{id}", userHandler.GetUserById) // attaching a method to the App struct -> pointer receiver
 		r.Get("/", helloWorld)
 		// r.Get("/user/{id}", controller.GetUserById) // attaching a method to the App struct -> pointer receiver
 		// r.Get("/users", controller.GetUser)         // attaching a method to the App struct -> pointer receiver
 		// r.Get("/user/{id}", controller.GetUserById) // attaching a method to the App struct -> pointer receiver
 
-	})
+	})*/
 
 	if err := http.ListenAndServe(":8080", router); err != nil {
 		log.Fatalf("HTTP server error: %v", err)
 	}
 }
 
-type UserHandler struct {
-	Repo    repository.UserRepository
-	Context context.Context
-}
+// type UserHandler struct {
+// 	Repo repository.UserRepository
+// 	// Context context.Context
+// }
 
-func NewUserHandler(repo repository.UserRepository) *UserHandler {
-	return &UserHandler{Repo: repo}
-}
+// func NewUserHandler(repo repository.UserRepository) *UserHandler {
+// 	return &UserHandler{Repo: repo}
+// }
 
-func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
+/*func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Repo.QueryAllUsers()
 	if err != nil {
 		log.Fatalf("QueryAllUsers error: %v", err)
@@ -112,9 +111,42 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func helloWorld(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
+	userIdStr := chi.URLParam(r, "id")
+	userId, err := strconv.ParseInt(userIdStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+	// user, err := h.Repo.GetUserByID(r.Context(), int32(userId))
+	user, err := h.Repo.GetUserByID(int32(userId))
+	if err != nil {
+		http.Error(w, "Failed to fetch user", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+}*/
+
+// func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+// 	users, err := h.Repo.QueryCreateUser()
+// 	if err != nil {
+// 		log.Fatalf("QueryAllUsers error: %v", err)
+// 		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+// 		return
+// 	}
+// 	w.Header().Set("Content-Type", "application/json")
+// 	if err := json.NewEncoder(w).Encode(users); err != nil {
+// 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+// 	}
+
+// }
+
+/*func helloWorld(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello there, World!")
-}
+}*/
 
 func ConcatDSN() string {
 	host := "postgresql"

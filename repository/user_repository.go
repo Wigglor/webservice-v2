@@ -16,7 +16,8 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepo {
 	}
 }
 
-func (m UserRepo) QueryAllUsers() ([]User, error) {
+// func (m UserRepo) QueryAllUsers() ([]User, error) {
+func (m *UserRepo) QueryAllUsers() ([]User, error) {
 	ctx := context.Background()
 	rows, err := m.db.Query(ctx, "SELECT * FROM users")
 	// rows, err := q.db.Query(ctx, getUsers)
@@ -55,7 +56,40 @@ type CreateUserParams struct {
 	SetupStatus        string `json:"setupStatus"`
 }
 
-func (m UserRepo) CreateUser(arg CreateUserParams) (User, error) {
+// func (m UserRepo) GetUserByID(id int32) (User, error) {
+func (m *UserRepo) GetUserByID(id int32) (User, error) {
+	ctx := context.Background()
+	row := m.db.QueryRow(ctx, `-- name: GetUserByID :one
+SELECT
+  id,
+  name,
+  email,
+  sub_id,
+  verification_status,
+  setup_status,
+  created_at,
+  updated_at
+FROM
+  user_tests
+WHERE
+  id = $1
+`, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.SubID,
+		&i.VerificationStatus,
+		&i.SetupStatus,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+// func (m UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
+func (m *UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
 	ctx := context.Background()
 	row := m.db.QueryRow(ctx, `-- name: CreateUser :one
 INSERT INTO user_tests (

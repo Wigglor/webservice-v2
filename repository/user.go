@@ -19,4 +19,6 @@ type User struct {
 
 type UserRepository interface {
 	QueryAllUsers() ([]User, error)
+	GetUserByID(id int32) (User, error)
+	// QueryCreateUser() (User, error)
 }
