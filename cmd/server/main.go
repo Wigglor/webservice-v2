@@ -6,32 +6,64 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
-	// "time"
+	"time"
 
 	"github.com/Wigglor/webservice-v2/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	dbURL := ConcatDSN()
-	dbpool, err := pgxpool.New(context.Background(), dbURL)
+	dbConfig, err := loadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+	fmt.Println("after loadConfig")
+	//dbpool, err := pgxpool.New(context.Background(), dbConfig.DSN)
+
+	config, err := pgxpool.ParseConfig(dbConfig.DSN)
+	if err != nil {
+		log.Fatalf("Failed to parse database configuration: %v", err)
+		return
+		// log.Fatalf("Failed to parse database configuration: %v", err)
+	}
+	fmt.Println("after ParseConfig")
+
+	// Configure the pool settings
+	config.MaxConns = dbConfig.MaxConns
+	config.MinConns = dbConfig.MinConns
+	config.MaxConnLifetime = dbConfig.MaxConnLifetime
+	config.MaxConnIdleTime = dbConfig.MaxConnIdleTime
+
+	// Create the pool
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		log.Fatalf("Failed to create database pool: %v", err)
 	}
-	defer dbpool.Close()
+	fmt.Println("after NewWithConfig")
 
-	userRepo := repository.NewUserRepository(dbpool)
+	err = pool.Ping(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to Ping...: %v", err)
+		pool.Close()
+		return
+		// log.Fatalf("Failed to test the connection: %v", err)
+	}
+	fmt.Println("after Ping")
 
+	defer pool.Close()
+
+	userRepo := repository.NewUserRepository(pool)
+	fmt.Println("after NewUserRepository", userRepo)
 	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	// defer cancel()
 
 	userHandler := NewUserHandler(userRepo)
-
+	fmt.Println("after NewUserHandler")
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
 	router.Use(cors.Handler(cors.Options{
@@ -51,6 +83,10 @@ func main() {
 		// r.Get("/user/{id}", controller.GetUserById) // attaching a method to the App struct -> pointer receiver
 
 	})
+
+	if err := http.ListenAndServe(":8080", router); err != nil {
+		log.Fatalf("HTTP server error: %v", err)
+	}
 }
 
 type UserHandler struct {
@@ -64,8 +100,8 @@ func NewUserHandler(repo repository.UserRepository) *UserHandler {
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Repo.QueryAllUsers()
-
 	if err != nil {
+		log.Fatalf("QueryAllUsers error: %v", err)
 		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
 		return
 	}
@@ -81,16 +117,44 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 }
 
 func ConcatDSN() string {
-	// host := "postgresql"
-	// username := "webservice_dev_user"
-	// password := "yourpassword"
-	// databaseName := "webservice_dev"
-	// port := "5432"
-	host := os.Getenv("DB_HOST")
-	username := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	databaseName := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
+	host := "postgresql"
+	username := "webservice_dev_user"
+	password := "yourpassword"
+	databaseName := "webservice_dev"
+	port := "5432"
+	// host := os.Getenv("DB_HOST")
+	// username := os.Getenv("DB_USER")
+	// password := os.Getenv("DB_PASSWORD")
+	// databaseName := os.Getenv("DB_NAME")
+	// port := os.Getenv("DB_PORT")
 
 	return fmt.Sprintf("%s://%s:%s@db:%s/%s", host, username, password, port, databaseName)
+	// return fmt.Sprintf("%s://%s:%s@localhost:%s/%s", host, username, password, port, databaseName)
+}
+
+type Config struct {
+	DSN             string
+	MaxConns        int32
+	MinConns        int32
+	MaxConnLifetime time.Duration
+	MaxConnIdleTime time.Duration
+}
+
+func loadConfig() (Config, error) {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("failed godotenv.Load")
+		return Config{}, fmt.Errorf("error loading .env file: %w", err)
+	}
+
+	dbURL := ConcatDSN()
+	fmt.Println("dbURL: ", dbURL)
+
+	return Config{
+		DSN:             dbURL,
+		MaxConns:        10,
+		MinConns:        5,
+		MaxConnLifetime: time.Hour,
+		MaxConnIdleTime: 30 * time.Minute,
+	}, nil
 }
