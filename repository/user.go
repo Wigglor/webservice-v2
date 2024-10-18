@@ -1,7 +1,7 @@
 package repository
 
 import (
-	// "context"
+	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -18,7 +18,7 @@ type User struct {
 }
 
 type UserRepository interface {
-	QueryAllUsers() ([]User, error)
-	GetUserByID(id int32) (User, error)
+	QueryAllUsers(ctx context.Context) ([]User, error)
+	GetUserByID(ctx context.Context, id int32) (User, error)
 	// QueryCreateUser() (User, error)
 }

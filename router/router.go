@@ -52,7 +52,7 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.Repo.QueryAllUsers()
+	users, err := h.Repo.QueryAllUsers(r.Context())
 	if err != nil {
 		log.Fatalf("QueryAllUsers error: %v", err)
 		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
@@ -73,7 +73,7 @@ func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// user, err := h.Repo.GetUserByID(r.Context(), int32(userId))
-	user, err := h.Repo.GetUserByID(int32(userId))
+	user, err := h.Repo.GetUserByID(r.Context(), int32(userId))
 	if err != nil {
 		http.Error(w, "Failed to fetch user", http.StatusInternalServerError)
 		return

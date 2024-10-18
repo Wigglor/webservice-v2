@@ -17,8 +17,8 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepo {
 }
 
 // func (m UserRepo) QueryAllUsers() ([]User, error) {
-func (m *UserRepo) QueryAllUsers() ([]User, error) {
-	ctx := context.Background()
+func (m *UserRepo) QueryAllUsers(ctx context.Context) ([]User, error) {
+	// ctx := context.Background()
 	rows, err := m.db.Query(ctx, "SELECT * FROM users")
 	// rows, err := q.db.Query(ctx, getUsers)
 	if err != nil {
@@ -57,8 +57,8 @@ type CreateUserParams struct {
 }
 
 // func (m UserRepo) GetUserByID(id int32) (User, error) {
-func (m *UserRepo) GetUserByID(id int32) (User, error) {
-	ctx := context.Background()
+func (m *UserRepo) GetUserByID(ctx context.Context, id int32) (User, error) {
+	// ctx := context.Background()
 	row := m.db.QueryRow(ctx, `-- name: GetUserByID :one
 SELECT
   id,
@@ -89,8 +89,8 @@ WHERE
 }
 
 // func (m UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
-func (m *UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
-	ctx := context.Background()
+func (m *UserRepo) QueryCreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	// ctx := context.Background()
 	row := m.db.QueryRow(ctx, `-- name: CreateUser :one
 INSERT INTO user_tests (
   name,
