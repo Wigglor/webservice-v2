@@ -1,21 +1,22 @@
 package main
 
-/*import (
+import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
 	"github.com/Wigglor/webservice-v2/repository"
-	// "github.com/jackc/pgtype"
-	// "github.com/stretchr/testify/assert"
+	"github.com/Wigglor/webservice-v2/router"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/stretchr/testify/assert"
 )
 
 type mockUserModel struct{}
 
-func (m *mockUserModel) QueryAllUsers() ([]repository.User, error) {
+func (m *mockUserModel) QueryAllUsers(ctx context.Context) ([]repository.User, error) {
 	var users []repository.User
 
 	users = append(users, repository.User{ID: 1, Name: "Joe Doe", Email: "johndoe@email.com", SubID: "subid_123abc", VerificationStatus: true, SetupStatus: "pending"})
@@ -24,6 +25,58 @@ func (m *mockUserModel) QueryAllUsers() ([]repository.User, error) {
 	return users, nil
 }
 
+func (m *mockUserModel) GetUserByID(ctx context.Context, id int32) (repository.User, error) {
+	var users []repository.User
+
+	users = append(users, repository.User{ID: 1, Name: "Joe Doe", Email: "johndoe@email.com", SubID: "subid_123abc", VerificationStatus: true, SetupStatus: "pending"})
+	users = append(users, repository.User{ID: 2, Name: "Jane Doe", Email: "janedoe@email.com", SubID: "subid_456def", VerificationStatus: true, SetupStatus: "pending"})
+
+	return users[0], nil
+}
+func TestGetUsers(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users", nil)
+	// handler:= router.UserHandler{Repo: mockUserModel}
+	handler := router.UserHandler{Repo: &mockUserModel{}}
+	http.HandlerFunc(handler.GetUsers).ServeHTTP(rec, req)
+	expected := []repository.User{
+		{
+			ID:                 1,
+			Name:               "Joe Doe",
+			Email:              "johndoe@email.com",
+			SubID:              "subid_123abc",
+			VerificationStatus: true,
+			SetupStatus:        "pending",
+			CreatedAt:          pgtype.Timestamptz{Valid: false},
+			UpdatedAt:          pgtype.Timestamptz{Valid: false},
+		},
+		{
+			ID:                 2,
+			Name:               "Jane Doe",
+			Email:              "janedoe@email.com",
+			SubID:              "subid_456def",
+			VerificationStatus: true,
+			SetupStatus:        "pending",
+			CreatedAt:          pgtype.Timestamptz{Valid: false},
+			UpdatedAt:          pgtype.Timestamptz{Valid: false},
+		},
+	}
+	var obtained []repository.User
+	err := json.Unmarshal(rec.Body.Bytes(), &obtained)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response body: %v", err)
+	}
+
+	// Compare the expected and obtained data
+	if !reflect.DeepEqual(expected, obtained) {
+		t.Errorf("\n...expected = %v\n...obtained = %v", expected, obtained)
+	}
+
+	// Alternatively, using testify's assert
+	assert.Equal(t, expected, obtained, "The expected and obtained users should be equal")
+}
+
+/*
 func TestGetUsers(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users", nil)
