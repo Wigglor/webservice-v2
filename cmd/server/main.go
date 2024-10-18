@@ -59,7 +59,7 @@ func main() {
 	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	// defer cancel()
 
-	userHandler := router.NewUserHandler(userRepo)
+	userHandler := router.NewUserHandler(userRepo) // changfrom router to controller/handler folder
 	fmt.Println("after NewUserHandler")
 	router := router.Routes(userHandler)
 	/*router := chi.NewRouter()
