@@ -43,8 +43,6 @@ func main() {
 		// extra handling here
 		cancel()
 	}()
-	//////////////https://www.google.com/search?q=golang+http+server+graceful+shutdown&oq=golang+server+graceful+shutdown&gs_lcrp=EgZjaHJvbWUqCAgBEAAYFhgeMgYIABBFGDkyCAgBEAAYFhgeMggIAhAAGBYYHjIICAMQABgWGB4yCAgEEAAYFhgeMg0IBRAAGIYDGIAEGIoFMgoIBhAAGIAEGKIEMgoIBxAAGIAEGKIE0gEINzM5MmowajeoAgCwAgA&sourceid=chrome&ie=UTF-8
-	//////////////https://www.google.com/search?q=run+tests+sequentially+golang&oq=run+tests+on+golang&gs_lcrp=EgZjaHJvbWUqCAgBEAAYFhgeMgYIABBFGDkyCAgBEAAYFhgeMg0IAhAAGIYDGIAEGIoFMgoIAxAAGIAEGKIEMgoIBBAAGIAEGKIE0gEINTYxOGowajeoAgCwAgA&sourceid=chrome&ie=UTF-8
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
