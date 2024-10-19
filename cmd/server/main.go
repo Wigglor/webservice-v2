@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/Wigglor/webservice-v2/repository"
@@ -15,150 +17,87 @@ import (
 )
 
 func main() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
 	dbConfig, err := loadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-	fmt.Println("after loadConfig")
-	//dbpool, err := pgxpool.New(context.Background(), dbConfig.DSN)
 
 	config, err := pgxpool.ParseConfig(dbConfig.DSN)
 	if err != nil {
 		log.Fatalf("Failed to parse database configuration: %v", err)
 		return
-		// log.Fatalf("Failed to parse database configuration: %v", err)
 	}
-	fmt.Println("after ParseConfig")
 
-	// Configure the pool settings
 	config.MaxConns = dbConfig.MaxConns
 	config.MinConns = dbConfig.MinConns
 	config.MaxConnLifetime = dbConfig.MaxConnLifetime
 	config.MaxConnIdleTime = dbConfig.MaxConnIdleTime
 
-	// Create the pool
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	// ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+	defer func() {
+		// extra handling here
+		cancel()
+	}()
+	//////////////https://www.google.com/search?q=golang+http+server+graceful+shutdown&oq=golang+server+graceful+shutdown&gs_lcrp=EgZjaHJvbWUqCAgBEAAYFhgeMgYIABBFGDkyCAgBEAAYFhgeMggIAhAAGBYYHjIICAMQABgWGB4yCAgEEAAYFhgeMg0IBRAAGIYDGIAEGIoFMgoIBhAAGIAEGKIEMgoIBxAAGIAEGKIE0gEINzM5MmowajeoAgCwAgA&sourceid=chrome&ie=UTF-8
+	//////////////https://www.google.com/search?q=run+tests+sequentially+golang&oq=run+tests+on+golang&gs_lcrp=EgZjaHJvbWUqCAgBEAAYFhgeMgYIABBFGDkyCAgBEAAYFhgeMg0IAhAAGIYDGIAEGIoFMgoIAxAAGIAEGKIEMgoIBBAAGIAEGKIE0gEINTYxOGowajeoAgCwAgA&sourceid=chrome&ie=UTF-8
+
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		log.Fatalf("Failed to create database pool: %v", err)
 	}
-	fmt.Println("after NewWithConfig")
-
-	err = pool.Ping(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to Ping...: %v", err)
-		pool.Close()
-		return
-		// log.Fatalf("Failed to test the connection: %v", err)
-	}
-	fmt.Println("after Ping")
-
 	defer pool.Close()
 
+	err = pool.Ping(ctx)
+	if err != nil {
+		log.Fatalf("Failed to Ping...: %v", err)
+		// pool.Close()
+		return
+	}
+
 	userRepo := repository.NewUserRepository(pool)
-	fmt.Println("after NewUserRepository", userRepo)
-	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	// defer cancel()
-
 	userHandler := router.NewUserHandler(userRepo) // changfrom router to controller/handler folder
-	fmt.Println("after NewUserHandler")
 	router := router.Routes(userHandler)
-	/*router := chi.NewRouter()
-	router.Use(middleware.Recoverer)
-	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://*", "https://*"},
-		AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
 
-	router.Route("/api", func(r chi.Router) {
-		r.Get("/users", userHandler.GetUsers)        // attaching a method to the App struct -> pointer receiver
-		r.Get("/user/{id}", userHandler.GetUserById) // attaching a method to the App struct -> pointer receiver
-		r.Get("/", helloWorld)
-		// r.Get("/user/{id}", controller.GetUserById) // attaching a method to the App struct -> pointer receiver
-		// r.Get("/users", controller.GetUser)         // attaching a method to the App struct -> pointer receiver
-		// r.Get("/user/{id}", controller.GetUserById) // attaching a method to the App struct -> pointer receiver
-
-	})*/
-
-	if err := http.ListenAndServe(":8080", router); err != nil {
-		log.Fatalf("HTTP server error: %v", err)
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
 	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			// if err := srv.ListenAndServe();  err != http.ErrServerClosed {
+			log.Fatalf("HTTP server error: %v", err)
+			// log.Printf("HTTP server error: %v", err)
+			// quit <- os.Interrupt
+		}
+		// // if err := http.ListenAndServe(":8080", router); err != nil {
+		// if err := srv.ListenAndServe(); err != nil {
+		// 	log.Fatalf("HTTP server error: %v", err)
+		// }
+	}()
+	log.Print("Server Started")
+
+	<-quit
+	log.Print("Server Stopped")
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("HTTP Server Shutdown Error: %v", err)
+		// log.Fatalf("Server Shutdown Failed:%+v", err)
+	}
+	log.Print("Server Exited Properly")
 }
-
-// type UserHandler struct {
-// 	Repo repository.UserRepository
-// 	// Context context.Context
-// }
-
-// func NewUserHandler(repo repository.UserRepository) *UserHandler {
-// 	return &UserHandler{Repo: repo}
-// }
-
-/*func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.Repo.QueryAllUsers()
-	if err != nil {
-		log.Fatalf("QueryAllUsers error: %v", err)
-		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
-
-}
-
-func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
-	userIdStr := chi.URLParam(r, "id")
-	userId, err := strconv.ParseInt(userIdStr, 10, 32)
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-	// user, err := h.Repo.GetUserByID(r.Context(), int32(userId))
-	user, err := h.Repo.GetUserByID(int32(userId))
-	if err != nil {
-		http.Error(w, "Failed to fetch user", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
-}*/
-
-// func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-// 	users, err := h.Repo.QueryCreateUser()
-// 	if err != nil {
-// 		log.Fatalf("QueryAllUsers error: %v", err)
-// 		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Header().Set("Content-Type", "application/json")
-// 	if err := json.NewEncoder(w).Encode(users); err != nil {
-// 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-// 	}
-
-// }
-
-/*func helloWorld(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello there, World!")
-}*/
 
 func ConcatDSN() string {
-	host := "postgresql"
-	username := "webservice_dev_user"
-	password := "yourpassword"
-	databaseName := "webservice_dev"
-	port := "5432"
-	// host := os.Getenv("DB_HOST")
-	// username := os.Getenv("DB_USER")
-	// password := os.Getenv("DB_PASSWORD")
-	// databaseName := os.Getenv("DB_NAME")
-	// port := os.Getenv("DB_PORT")
+	host := os.Getenv("DB_HOST")
+	username := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	databaseName := os.Getenv("DB_NAME")
+	port := os.Getenv("DB_PORT")
 
 	return fmt.Sprintf("%s://%s:%s@db:%s/%s", host, username, password, port, databaseName)
 	// return fmt.Sprintf("%s://%s:%s@localhost:%s/%s", host, username, password, port, databaseName)
