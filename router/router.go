@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/Wigglor/webservice-v2/repository"
 
@@ -41,6 +42,7 @@ func Routes(handler *UserHandler) http.Handler {
 
 type UserHandler struct {
 	Repo repository.UserRepository
+	wg   *sync.WaitGroup
 }
 
 func NewUserHandler(repo repository.UserRepository) *UserHandler {

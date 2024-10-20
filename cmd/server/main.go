@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,16 +12,17 @@ import (
 	"time"
 
 	"github.com/Wigglor/webservice-v2/repository"
+	"github.com/Wigglor/webservice-v2/repository/database"
 	"github.com/Wigglor/webservice-v2/router"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
+	// "github.com/jackc/pgx/v5/pgxpool"
+	// "github.com/joho/godotenv"
 )
 
 func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	dbConfig, err := loadConfig()
+	/*dbConfig, err := loadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
@@ -35,28 +36,33 @@ func main() {
 	config.MaxConns = dbConfig.MaxConns
 	config.MinConns = dbConfig.MinConns
 	config.MaxConnLifetime = dbConfig.MaxConnLifetime
-	config.MaxConnIdleTime = dbConfig.MaxConnIdleTime
+	config.MaxConnIdleTime = dbConfig.MaxConnIdleTime*/
 
-	// ctx, cancel := context.WithCancel(context.Background())
+	/*// ctx, cancel := context.WithCancel(context.Background())
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	// defer cancel()
 	defer func() {
 		// extra handling here
 		cancel()
-	}()
+	}()*/
 
-	pool, err := pgxpool.NewWithConfig(ctx, config)
+	/*pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		log.Fatalf("Failed to create database pool: %v", err)
+	}*/
+	pool, err := database.ConnectDB()
+	// pool, err := database.ConnectDB(ctx)
+	if err != nil {
+		log.Fatalf("Failed to initialize database connection: %v", err)
 	}
 	defer pool.Close()
 
-	err = pool.Ping(ctx)
+	/*err = pool.Ping(ctx)
 	if err != nil {
 		log.Fatalf("Failed to Ping...: %v", err)
 		pool.Close() // should i have this here???
 		return
-	}
+	}*/
 
 	var wg sync.WaitGroup
 
@@ -88,11 +94,11 @@ func main() {
 	<-quit
 	log.Print("Server Stopped")
 
-	// shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	// defer shutdownCancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
 	//why shutdown context???
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		// log.Printf("HTTP Server Shutdown Error: %v", err)
 		log.Fatalf("Server Shutdown Failed:%+v", err)
 	}
@@ -102,7 +108,7 @@ func main() {
 	log.Print("Server Exited Properly")
 }
 
-func ConcatDSN() string {
+/*func ConcatDSN() string {
 	host := os.Getenv("DB_HOST")
 	username := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
@@ -138,4 +144,4 @@ func loadConfig() (Config, error) {
 		MaxConnLifetime: time.Hour,
 		MaxConnIdleTime: 30 * time.Minute,
 	}, nil
-}
+}*/

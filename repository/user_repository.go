@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// https://chatgpt.com/c/6713d9de-56f8-8008-b419-21d00d266eb8
 type UserRepo struct {
 	db *pgxpool.Pool
 }
