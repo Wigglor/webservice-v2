@@ -88,6 +88,10 @@ func main() {
 	<-quit
 	log.Print("Server Stopped")
 
+	// shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer shutdownCancel()
+	//why shutdown context???
+
 	if err := srv.Shutdown(ctx); err != nil {
 		// log.Printf("HTTP Server Shutdown Error: %v", err)
 		log.Fatalf("Server Shutdown Failed:%+v", err)
