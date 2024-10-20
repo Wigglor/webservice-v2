@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -53,9 +54,11 @@ func main() {
 	err = pool.Ping(ctx)
 	if err != nil {
 		log.Fatalf("Failed to Ping...: %v", err)
-		// pool.Close()
+		pool.Close() // should i have this here???
 		return
 	}
+
+	var wg sync.WaitGroup
 
 	userRepo := repository.NewUserRepository(pool)
 	userHandler := router.NewUserHandler(userRepo) // changfrom router to controller/handler folder
@@ -66,7 +69,9 @@ func main() {
 		Handler: router,
 	}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			// if err := srv.ListenAndServe();  err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
@@ -87,6 +92,9 @@ func main() {
 		// log.Printf("HTTP Server Shutdown Error: %v", err)
 		log.Fatalf("Server Shutdown Failed:%+v", err)
 	}
+
+	wg.Wait()
+	log.Print("All goroutines have finished")
 	log.Print("Server Exited Properly")
 }
 
