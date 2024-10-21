@@ -53,3 +53,13 @@ https://dev.to/muhammedarifp/creating-a-simple-hello-world-web-application-with-
    NOW(),  
    NOW()  
   );
+
+## Things to look into
+
+- context. Do I need to create several different contexts, e.g. shutdownCtx (in main) and pool, err := pgxpool.NewWithConfig(context.Background(), config) and ctx, cancel := context.WithTimeout(context.Background(), 5\*time.Second) in dbConfig?
+
+- Do I really need var wg sync.WaitGroup?
+
+- Where and why should channel response operator; <-quit
+
+- should db be in a goroutine? Why and why not?

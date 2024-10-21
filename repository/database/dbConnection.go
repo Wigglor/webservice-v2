@@ -3,18 +3,12 @@ package database
 import (
 	"context"
 	"fmt"
-
-	//"log"
 	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
-
-// type DB struct {
-// 	Pool *pgxpool.Pool
-// }
 
 type Config struct {
 	DSN             string
@@ -34,7 +28,6 @@ func ConnectDB( /*ctx context.Context cfg Config*/ ) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(dbConfig.DSN)
 	if err != nil {
 		// log.Fatalf("Failed to parse database configuration: %v", err)
-		// return nil, err
 		return nil, fmt.Errorf("failed to parse database configuration: %w", err)
 	}
 
@@ -47,7 +40,6 @@ func ConnectDB( /*ctx context.Context cfg Config*/ ) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create database pool: %w", err)
-		// log.Fatalf("Failed to create database pool: %v", err)
 	}
 
 	// Use a context with timeout for Ping
@@ -58,7 +50,6 @@ func ConnectDB( /*ctx context.Context cfg Config*/ ) (*pgxpool.Pool, error) {
 	if err != nil {
 		pool.Close() // should i have this here???
 		return nil, fmt.Errorf("failed to test the connection: %w", err)
-		// return
 	}
 	return pool, nil
 }
@@ -71,7 +62,6 @@ func loadConfig() (Config, error) {
 	}
 
 	dbURL := ConcatDSN()
-	fmt.Println("dbURL: ", dbURL)
 
 	return Config{
 		DSN:             dbURL,
@@ -90,5 +80,4 @@ func ConcatDSN() string {
 	port := os.Getenv("DB_PORT")
 
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", username, password, host, port, databaseName)
-	// return fmt.Sprintf("%s://%s:%s@localhost:%s/%s", host, username, password, port, databaseName)
 }

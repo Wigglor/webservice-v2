@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	// "fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,11 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Wigglor/webservice-v2/handlers"
 	"github.com/Wigglor/webservice-v2/repository"
 	"github.com/Wigglor/webservice-v2/repository/database"
 	"github.com/Wigglor/webservice-v2/router"
-	// "github.com/jackc/pgx/v5/pgxpool"
-	// "github.com/joho/godotenv"
 )
 
 func main() {
@@ -67,7 +65,8 @@ func main() {
 	var wg sync.WaitGroup
 
 	userRepo := repository.NewUserRepository(pool)
-	userHandler := router.NewUserHandler(userRepo) // changfrom router to controller/handler folder
+	userHandler := handlers.NewUserHandler(userRepo) // changfrom router to controller/handler folder
+	// userHandler := router.NewUserHandler(userRepo) // changfrom router to controller/handler folder
 	router := router.Routes(userHandler)
 
 	srv := &http.Server{
@@ -75,7 +74,7 @@ func main() {
 		Handler: router,
 	}
 
-	wg.Add(1)
+	wg.Add(1) // Does nothing atm. implement in handlers if neccessary.
 	go func() {
 		defer wg.Done()
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -99,7 +98,6 @@ func main() {
 	//why shutdown context???
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		// log.Printf("HTTP Server Shutdown Error: %v", err)
 		log.Fatalf("Server Shutdown Failed:%+v", err)
 	}
 

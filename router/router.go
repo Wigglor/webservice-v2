@@ -1,24 +1,16 @@
 package router
 
 import (
-	// "context"
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
-	"strconv"
-	"sync"
 
-	"github.com/Wigglor/webservice-v2/repository"
-
-	// "github.com/Wigglor/webservice/internal/db/models"
-
+	"github.com/Wigglor/webservice-v2/handlers"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
-func Routes(handler *UserHandler) http.Handler {
+// func Routes(handler *UserHandler) http.Handler {
+func Routes(handler *handlers.UserHandler) http.Handler {
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
 	router.Use(cors.Handler(cors.Options{
@@ -33,16 +25,15 @@ func Routes(handler *UserHandler) http.Handler {
 	router.Route("/api", func(r chi.Router) {
 		r.Get("/users", handler.GetUsers)
 		r.Get("/user/{id}", handler.GetUserById)
-		r.Get("/", helloWorld)
 
 	})
 
 	return router
 }
 
-type UserHandler struct {
+/*type UserHandler struct {
 	Repo repository.UserRepository
-	wg   *sync.WaitGroup
+	// wg   *sync.WaitGroup
 }
 
 func NewUserHandler(repo repository.UserRepository) *UserHandler {
@@ -84,4 +75,4 @@ func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(user); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
-}
+}*/

@@ -2,11 +2,10 @@ package repository
 
 import (
 	"context"
-	//"github.com/Wigglor/webservice-v2/models"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// https://chatgpt.com/c/6713d9de-56f8-8008-b419-21d00d266eb8
 type UserRepo struct {
 	db *pgxpool.Pool
 }
@@ -19,9 +18,7 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepo {
 
 // func (m UserRepo) QueryAllUsers() ([]User, error) {
 func (m *UserRepo) QueryAllUsers(ctx context.Context) ([]User, error) {
-	// ctx := context.Background()
 	rows, err := m.db.Query(ctx, "SELECT * FROM users")
-	// rows, err := q.db.Query(ctx, getUsers)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +56,6 @@ type CreateUserParams struct {
 
 // func (m UserRepo) GetUserByID(id int32) (User, error) {
 func (m *UserRepo) GetUserByID(ctx context.Context, id int32) (User, error) {
-	// ctx := context.Background()
 	row := m.db.QueryRow(ctx, `-- name: GetUserByID :one
 SELECT
   id,
@@ -91,7 +87,6 @@ WHERE
 
 // func (m UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
 func (m *UserRepo) QueryCreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	// ctx := context.Background()
 	row := m.db.QueryRow(ctx, `-- name: CreateUser :one
 INSERT INTO user_tests (
   name,

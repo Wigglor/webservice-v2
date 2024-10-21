@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Wigglor/webservice-v2/handlers"
 	"github.com/Wigglor/webservice-v2/repository"
-	"github.com/Wigglor/webservice-v2/router"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
@@ -27,17 +27,14 @@ func (m *mockUserModel) QueryAllUsers(ctx context.Context) ([]repository.User, e
 }
 
 func (m *mockUserModel) GetUserByID(ctx context.Context, id int32) (repository.User, error) {
-	// var users []repository.User
-
-	users := repository.User{ID: 1, Name: "Joe Doe", Email: "johndoe@email.com", SubID: "subid_123abc", VerificationStatus: true, SetupStatus: "pending"}
-	// users = append(users, repository.User{ID: 2, Name: "Jane Doe", Email: "janedoe@email.com", SubID: "subid_456def", VerificationStatus: true, SetupStatus: "pending"})
-
-	return users, nil
+	user := repository.User{ID: 1, Name: "Joe Doe", Email: "johndoe@email.com", SubID: "subid_123abc", VerificationStatus: true, SetupStatus: "pending"}
+	return user, nil
 }
 func TestGetUsers(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users", nil)
-	handler := router.UserHandler{Repo: &mockUserModel{}}
+	// handler := router.UserHandler{Repo: &mockUserModel{}}
+	handler := handlers.UserHandler{Repo: &mockUserModel{}}
 	http.HandlerFunc(handler.GetUsers).ServeHTTP(rec, req)
 	expected := []repository.User{
 		{
@@ -89,7 +86,8 @@ func TestGetUserById(t *testing.T) {
 	rctx.URLParams.Add("id", "1")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
-	handler := router.UserHandler{Repo: &mockUserModel{}}
+	// handler := router.UserHandler{Repo: &mockUserModel{}}
+	handler := handlers.UserHandler{Repo: &mockUserModel{}}
 	http.HandlerFunc(handler.GetUserById).ServeHTTP(rec, req)
 	expected := repository.User{
 		ID:                 1,
