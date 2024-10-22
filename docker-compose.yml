@@ -16,7 +16,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
       - DATABASE_HOST=${DB_HOST}
-      - DATABASE_PORT=DB_PORT
+      - DATABASE_PORT=${DB_PORT}
       - TEST_POSTGRES_USER=${TEST_DB_USER}
       - TEST_POSTGRES_PASSWORD=${TEST_DB_PASSWORD}
       - TEST_POSTGRES_DB=${TEST_DB_NAME}
@@ -57,6 +57,30 @@ services:
       - "4568:5432"
     volumes:
       - postgres-data-test:/var/lib/postgresql/data
+
+  # migrate:
+  #   image: migrate/migrate
+  #   container_name: migrate_container
+  #   environment:
+  #     - POSTGRES_USER=${DB_USER}
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD}
+  #     - POSTGRES_DB=${DB_NAME}
+  #     - DATABASE_HOST=${DB_HOST}
+  #     - DATABASE_PORT=${DB_PORT}
+  #   volumes:
+  #     - ./repository/database/migrations:/migrations
+  #   command: [
+  #       "-path",
+  #       # "app/repository/database/migrations",
+  #       "migrations",
+  #       "-database",
+  #       "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable",
+  #       #"postgres://webservice_dev_user:yourpassword@db:5432/webservice_dev?sslmode=disable",
+  #       "up",
+  #       # "3",
+  #     ]
+  #   depends_on:
+  #     - db
 
 volumes:
   postgres-data:
