@@ -35,4 +35,5 @@ dblrun:
 	docker run -p 8080:8080 -v $PWD:/app webapi-go-app
 
 migrate:
-	migrate -database postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME} -path repository/database/migrations up
+#	 migrate -database postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME} -path repository/database/migrations up
+	migrate -database postgres://webservice_dev_user:yourpassword@db:5432/webservice_dev?sslmode=disable -path repository/database/migrations up
