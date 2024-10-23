@@ -6,6 +6,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type CreateUserParams struct {
+	Name               string `json:"name"`
+	Email              string `json:"email"`
+	SubID              string `json:"subId"`
+	VerificationStatus bool   `json:"verificationStatus"`
+	SetupStatus        string `json:"setupStatus"`
+}
+
 type UserRepo struct {
 	db *pgxpool.Pool
 }
@@ -44,14 +52,6 @@ func (m *UserRepo) QueryAllUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-type CreateUserParams struct {
-	Name               string `json:"name"`
-	Email              string `json:"email"`
-	SubID              string `json:"subId"`
-	VerificationStatus bool   `json:"verificationStatus"`
-	SetupStatus        string `json:"setupStatus"`
 }
 
 // func (m UserRepo) GetUserByID(id int32) (User, error) {
