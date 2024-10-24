@@ -1,18 +1,22 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Wigglor/webservice-v2/handlers"
+	"github.com/Wigglor/webservice-v2/middlewares"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
 // func Routes(handler *UserHandler) http.Handler {
 func Routes(handler *handlers.UserHandler) http.Handler {
 	router := chi.NewRouter()
-	router.Use(middleware.Recoverer)
+	router.Use(chi_middleware.Recoverer)
+	router.Use(chi_middleware.Logger)
+	router.Use(middlewares.LoggerMiddleware)
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://*", "https://*"},
 		AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
@@ -26,9 +30,23 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 		r.Get("/users", handler.GetUsers)
 		r.Get("/user/{id}", handler.GetUserById)
 
+		r.Route("/auth", func(r chi.Router) {
+			r.With(middlewares.EnsureValidToken()).Get("/protected", helloAuth)
+			// r.Use(middlewares.EnsureValidToken())
+			r.Get("/", helloWorld) // DELETE /articles/123
+		})
+
 	})
 
 	return router
+}
+
+func helloWorld(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello there, World!")
+}
+
+func helloAuth(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello there, World!")
 }
 
 /*type UserHandler struct {

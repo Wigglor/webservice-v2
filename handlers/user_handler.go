@@ -18,9 +18,9 @@ func NewUserHandler(repo repository.UserRepository) *UserHandler {
 	return &UserHandler{Repo: repo}
 }
 
-/*func (h *UserHandler) helloWorld(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello there, World!")
-}*/
+// func (h *UserHandler) helloWorld(w http.ResponseWriter, r *http.Request) {
+// 	fmt.Fprintf(w, "Hello there, World!")
+// }
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Repo.QueryAllUsers(r.Context())
