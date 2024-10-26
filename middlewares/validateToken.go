@@ -1,5 +1,3 @@
-// middleware/jwt.go
-
 package middlewares
 
 import (
@@ -8,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
@@ -27,7 +26,8 @@ func (c CustomClaims) Validate(ctx context.Context) error {
 }
 
 // EnsureValidToken is a middleware that will check the validity of our JWT.
-func EnsureValidToken() func(next http.Handler) http.Handler {
+// func EnsureValidToken() func(next http.Handler) http.Handler {
+func EnsureValidToken(next http.Handler) http.Handler {
 	issuerURL, err := url.Parse("https://" + os.Getenv("AUTH0_DOMAIN") + "/")
 	if err != nil {
 		log.Fatalf("Failed to parse the issuer url: %v", err)
@@ -64,7 +64,20 @@ func EnsureValidToken() func(next http.Handler) http.Handler {
 		jwtmiddleware.WithErrorHandler(errorHandler),
 	)
 
-	return func(next http.Handler) http.Handler {
-		return middleware.CheckJWT(next)
+	// return func(next http.Handler) http.Handler {
+	// 	return middleware.CheckJWT(next)
+	// }
+	return middleware.CheckJWT(next)
+}
+
+// HasScope checks whether our claims have a specific scope.
+func (c CustomClaims) HasScope(expectedScope string) bool {
+	result := strings.Split(c.Scope, " ")
+	for i := range result {
+		if result[i] == expectedScope {
+			return true
+		}
 	}
+
+	return false
 }
