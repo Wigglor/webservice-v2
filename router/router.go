@@ -29,9 +29,11 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 	router.Route("/api", func(r chi.Router) {
 		r.Get("/users", handler.GetUsers)
 		r.Get("/user/{id}", handler.GetUserById)
+		// r.With().Get("/protected", helloAuth)
 
 		r.Route("/auth", func(r chi.Router) {
-			r.With(middlewares.EnsureValidToken()).Get("/protected", helloAuth)
+			r.Use(middlewares.EnsureValidToken)
+			//r.With(middlewares.EnsureValidToken).Get("/protected", helloAuth)
 			// r.Use(middlewares.EnsureValidToken())
 			r.Get("/", helloWorld) // DELETE /articles/123
 		})
