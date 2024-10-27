@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"strings"
+
 	"github.com/Wigglor/webservice-v2/repository"
-	"github.com/go-chi/chi/v5"
+	// "github.com/go-chi/chi"
 )
 
 type UserHandler struct {
@@ -37,8 +39,11 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
-	userIdStr := chi.URLParam(r, "id")
+	// userIdStr := chi.URLParam(r, "id")
+	userIdStr := strings.TrimPrefix(r.URL.Path, "/api/user/")
+	println(userIdStr)
 	userId, err := strconv.ParseInt(userIdStr, 10, 32)
+	println(userId)
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return

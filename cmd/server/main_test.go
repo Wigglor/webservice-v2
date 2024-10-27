@@ -10,7 +10,8 @@ import (
 
 	"github.com/Wigglor/webservice-v2/handlers"
 	"github.com/Wigglor/webservice-v2/repository"
-	"github.com/go-chi/chi/v5"
+
+	// "github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 )
@@ -77,14 +78,60 @@ func TestGetUsers(t *testing.T) {
 }
 
 func TestGetUserById(t *testing.T) {
+	// Create the mock repository and handler
+	handler := handlers.UserHandler{Repo: &mockUserModel{}}
+
+	// Create a test HTTP request
+	req, err := http.NewRequest("GET", "/api/user/1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a response recorder
 	rec := httptest.NewRecorder()
+
+	// Call the handler directly
+	http.HandlerFunc(handler.GetUserById).ServeHTTP(rec, req)
+
+	// Define the expected user data
+	expected := repository.User{
+		ID:                 1,
+		Name:               "Joe Doe",
+		Email:              "johndoe@email.com",
+		SubID:              "subid_123abc",
+		VerificationStatus: true,
+		SetupStatus:        "pending",
+		CreatedAt:          pgtype.Timestamptz{Valid: false},
+		UpdatedAt:          pgtype.Timestamptz{Valid: false},
+	}
+
+	// Parse the response body
+	var obtained repository.User
+	err = json.Unmarshal(rec.Body.Bytes(), &obtained)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response body: %v", err)
+	}
+
+	// Check status code
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status 200 OK, got %v", rec.Code)
+	}
+
+	// Compare the expected and obtained data
+	if !reflect.DeepEqual(expected, obtained) {
+		t.Errorf("\n...expected = %v\n...obtained = %v", expected, obtained)
+	}
+
+	// Using testify's assert package
+	assert.Equal(t, expected, obtained, "The expected and obtained users should be equal")
+	/*rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/user/1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("id", "1")
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	// rctx := chi.NewRouteContext()
+	// rctx.URLParams.Add("id", "1")
+	// req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 	// handler := router.UserHandler{Repo: &mockUserModel{}}
 	handler := handlers.UserHandler{Repo: &mockUserModel{}}
@@ -115,5 +162,5 @@ func TestGetUserById(t *testing.T) {
 	assert.Equal(t, expected, obtained, "The expected and obtained users should be equal")
 	// if expected != rec.Body.String() {
 	// 		t.Errorf("\n...expected = %v\n...obtained = %v", expected, rec.Body.String())
-	// 	}
+	// 	}*/
 }
