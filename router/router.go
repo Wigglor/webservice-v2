@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/Wigglor/webservice-v2/handlers"
@@ -31,14 +31,16 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// CORS Headers.
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8000")
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization")
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message":"Hello from a private endpoint! You need to be authenticated to see this."}`))
+			w.Write([]byte(`{"message":"Hello from a private endpoint! You need to be authenticated to see this message."}`))
 		}),
 	))
+	mux.Handle("/api/private2", ValidateJWT(http.HandlerFunc(helloAuth)))
+	mux.Handle("/api/private3", middlewares.EnsureValidToken()(http.HandlerFunc(helloAuth)))
 	return mux
 	/*router := chi.NewRouter()
 	router.Use(chi_middleware.Recoverer)
@@ -87,7 +89,7 @@ func helloAuth(w http.ResponseWriter, r *http.Request) {
 
 func ValidateJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		issuerURL, err := url.Parse("https://" + "dev-frhs26nrb6ju4iai.us.auth0.com" + "/")
+		issuerURL, err := url.Parse("https://" + os.Getenv("AUTH0_DOMAIN") + "/")
 		if err != nil {
 			log.Fatalf("Failed to parse the issuer url: %v", err)
 		}
@@ -98,7 +100,7 @@ func ValidateJWT(next http.Handler) http.Handler {
 			provider.KeyFunc,
 			validator.RS256,
 			issuerURL.String(),
-			[]string{"https://hello-world.example.com/api/v2/"},
+			[]string{os.Getenv("AUTH0_AUDIENCE")},
 		)
 		if err != nil {
 			log.Fatalf("Failed to set up the jwt validator")

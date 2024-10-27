@@ -11,7 +11,8 @@ COPY . .
 RUN go build -o /server ./cmd/server
 
 # Run stage  
-FROM scratch
+# FROM scratch
+FROM alpine:latest
 WORKDIR /app
 COPY --from=build /server /server
 CMD ["/server"]
