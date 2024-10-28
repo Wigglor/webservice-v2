@@ -23,9 +23,9 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 
 	// finalHandler := http.HandlerFunc(helloAuth)
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("GET /api/users", handler.GetUsers)
 	mux.HandleFunc("GET /api/user/{id}", handler.GetUserById)
-	// mux.HandleFunc("GET /api/auth/protected", middlewares.EnsureValidToken(finalHandler))
 	// This route is only accessible if the user has a valid access_token.
 	mux.Handle("/api/private", middlewares.EnsureValidToken()(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +33,6 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8000")
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization")
-
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"message":"Hello from a private endpoint! You need to be authenticated to see this message."}`))
@@ -124,10 +123,10 @@ func ValidateJWT(next http.Handler) http.Handler {
 		log.Printf("Authorization Header: %s", authHeader)
 
 		// Pass through the middleware, which may modify the request context
-		middleware.CheckJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Println("Token validated successfully.")
-			next.ServeHTTP(w, r)
-		})).ServeHTTP(w, r)
+		// middleware.CheckJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 	log.Println("Token validated successfully.")
+		// 	next.ServeHTTP(w, r)
+		// })).ServeHTTP(w, r)
 
 		middleware.CheckJWT(next).ServeHTTP(w, r)
 	})
