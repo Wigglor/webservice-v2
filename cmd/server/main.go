@@ -49,6 +49,7 @@ func main() {
 		log.Fatalf("Failed to create database pool: %v", err)
 	}*/
 	pool, err := database.ConnectDB()
+	// pool, err := database.ConnectDB(ctx)
 	if err != nil {
 		log.Fatalf("Failed to initialize database connection: %v", err)
 	}
