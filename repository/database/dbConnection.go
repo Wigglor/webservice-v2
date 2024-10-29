@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -55,7 +53,7 @@ func ConnectDB( /*ctx context.Context cfg Config*/ dbConfig Config) (*pgxpool.Po
 	return pool, nil
 }
 
-func loadConfig() (Config, error) {
+/*func loadConfig() (Config, error) {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("failed godotenv.Load")
@@ -81,4 +79,4 @@ func ConcatDSN() string {
 	port := os.Getenv("DB_PORT")
 
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", username, password, host, port, databaseName)
-}
+}*/
