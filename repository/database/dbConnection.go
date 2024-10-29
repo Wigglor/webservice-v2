@@ -19,12 +19,12 @@ type Config struct {
 	MaxConnIdleTime time.Duration
 }
 
-func ConnectDB( /*ctx context.Context cfg Config*/ ) (*pgxpool.Pool, error) {
-	dbConfig, err := loadConfig()
+func ConnectDB( /*ctx context.Context cfg Config*/ dbConfig Config) (*pgxpool.Pool, error) {
+	/*dbConfig, err := loadConfig()
 	if err != nil {
 		// log.Fatalf("Failed to load config: %v", err)
 		return nil, fmt.Errorf("failed to load config: %w", err)
-	}
+	}*/
 
 	config, err := pgxpool.ParseConfig(dbConfig.DSN)
 	if err != nil {

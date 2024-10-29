@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -14,18 +15,19 @@ import (
 	"github.com/Wigglor/webservice-v2/repository"
 	"github.com/Wigglor/webservice-v2/repository/database"
 	"github.com/Wigglor/webservice-v2/router"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	/*dbConfig, err := loadConfig()
+	dbConfig, err := loadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	config, err := pgxpool.ParseConfig(dbConfig.DSN)
+	/*config, err := pgxpool.ParseConfig(dbConfig.DSN)
 	if err != nil {
 		log.Fatalf("Failed to parse database configuration: %v", err)
 		return
@@ -48,7 +50,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create database pool: %v", err)
 	}*/
-	pool, err := database.ConnectDB()
+	pool, err := database.ConnectDB(dbConfig)
 	// pool, err := database.ConnectDB(ctx)
 	if err != nil {
 		log.Fatalf("Failed to initialize database connection: %v", err)
@@ -106,40 +108,47 @@ func main() {
 	log.Print("Server Exited Properly")
 }
 
-/*func ConcatDSN() string {
+func ConcatDSN() string {
+	// host := os.Getenv("DB_HOST")
+	// username := os.Getenv("DB_USER")
+	// password := os.Getenv("DB_PASSWORD")
+	// databaseName := os.Getenv("DB_NAME")
+	// port := os.Getenv("DB_PORT")
+
+	// return fmt.Sprintf("%s://%s:%s@db:%s/%s", host, username, password, port, databaseName)
 	host := os.Getenv("DB_HOST")
 	username := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
 	databaseName := os.Getenv("DB_NAME")
 	port := os.Getenv("DB_PORT")
 
-	return fmt.Sprintf("%s://%s:%s@db:%s/%s", host, username, password, port, databaseName)
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", username, password, host, port, databaseName)
 	// return fmt.Sprintf("%s://%s:%s@localhost:%s/%s", host, username, password, port, databaseName)
 }
 
-type Config struct {
-	DSN             string
-	MaxConns        int32
-	MinConns        int32
-	MaxConnLifetime time.Duration
-	MaxConnIdleTime time.Duration
-}
+// type Config struct {
+// 	DSN             string
+// 	MaxConns        int32
+// 	MinConns        int32
+// 	MaxConnLifetime time.Duration
+// 	MaxConnIdleTime time.Duration
+// }
 
-func loadConfig() (Config, error) {
+func loadConfig() (database.Config, error) {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("failed godotenv.Load")
-		return Config{}, fmt.Errorf("error loading .env file: %w", err)
+		return database.Config{}, fmt.Errorf("error loading .env file: %w", err)
 	}
 
 	dbURL := ConcatDSN()
 	fmt.Println("dbURL: ", dbURL)
 
-	return Config{
+	return database.Config{
 		DSN:             dbURL,
 		MaxConns:        10,
 		MinConns:        5,
 		MaxConnLifetime: time.Hour,
 		MaxConnIdleTime: 30 * time.Minute,
 	}, nil
-}*/
+}
