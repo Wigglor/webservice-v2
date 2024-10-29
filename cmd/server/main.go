@@ -126,14 +126,6 @@ func ConcatDSN() string {
 	// return fmt.Sprintf("%s://%s:%s@localhost:%s/%s", host, username, password, port, databaseName)
 }
 
-// type Config struct {
-// 	DSN             string
-// 	MaxConns        int32
-// 	MinConns        int32
-// 	MaxConnLifetime time.Duration
-// 	MaxConnIdleTime time.Duration
-// }
-
 func loadConfig() (database.Config, error) {
 	err := godotenv.Load()
 	if err != nil {
