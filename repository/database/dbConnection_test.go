@@ -31,19 +31,6 @@ func TestConnectDB(t *testing.T) {
 		}
 	}()
 
-	// Run any migrations on the database
-	_, _, err = ctr.Exec(ctx, []string{"psql", "-U", "postgres", "-d", "test-db", "-c", `CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) NOT NULL,
-  sub_id VARCHAR(50),
-  verification_status BOOLEAN,
-  setup_status VARCHAR(50),
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);`})
-	require.NoError(t, err)
-
 	dbURL, err := ctr.ConnectionString(ctx)
 	require.NoError(t, err)
 
@@ -54,35 +41,60 @@ func TestConnectDB(t *testing.T) {
 		MaxConnLifetime: time.Hour,
 		MaxConnIdleTime: 30 * time.Minute,
 	}
-	pool, err := ConnectDB(dbConfig)
-	if err != nil {
-		t.Fatalf("Failed to connect to database: %v", err)
-	}
-	var currentTime time.Time
+	// pool, err := ConnectDB(dbConfig)
+	// if err != nil {
+	// 	t.Fatalf("Failed to connect to database: %v", err)
+	// }
+
+	// Create the migrated_template database
+	// _, err = pool.Exec(ctx, "CREATE DATABASE migrated_template TEMPLATE test-db")
+	// if err != nil {
+	// 	t.Fatalf("Failed to create template database: %v", err)
+	// }
+
+	// Run any migrations on the database
+	_, _, err = ctr.Exec(ctx, []string{"psql", "-U", "postgres", "-d", "test-db", "-c", `CREATE TABLE users (
+	
+		name VARCHAR(255) NOT NULL,
+		email VARCHAR(255) NOT NULL,
+		sub_id VARCHAR(50),
+		verification_status BOOLEAN,
+		setup_status VARCHAR(50),
+		created_at TIMESTAMPTZ DEFAULT now(),
+		updated_at TIMESTAMPTZ DEFAULT now()
+	  );`})
+	require.NoError(t, err)
+
+	// 2. Create a snapshot of the database to restore later
+	// tt.options comes the test case, it can be specified as e.g. `postgres.WithSnapshotName("custom-snapshot")` or omitted, to use default name
+	err = ctr.Snapshot(ctx)
+	require.NoError(t, err)
+
+	/*var currentTime time.Time
 	err = pool.QueryRow(ctx, "SELECT NOW()").Scan(&currentTime)
 	if err != nil {
 		t.Fatalf("Failed to execute test query: %v", err)
 	}
 
 	// Log the success message
-	t.Logf("Successfully connected to the database at %v", currentTime)
+	t.Logf("Successfully connected to the database at %v", currentTime)*/
 
-	/*t.Run("Test inserting a user", func(t *testing.T) {
-			t.Cleanup(func() {
-				// 3. In each test, reset the DB to its snapshot state.
-				err = ctr.Restore(ctx)
-				require.NoError(t, err)
-			})
-
-			pool, err := ConnectDB(dbConfig)
-			if err != nil {
-				t.Fatalf("Failed to connect to database: %v", err)
-			}
+	t.Run("Test inserting a user", func(t *testing.T) {
+		t.Cleanup(func() {
+			// 3. In each test, reset the DB to its snapshot state.
+			err = ctr.Restore(ctx)
 			require.NoError(t, err)
-			// defer pool.Close(context.Background())
-			defer pool.Close()
+		})
 
-			_, err = pool.Exec(ctx, `INSERT INTO users (
+		pool, err := ConnectDB(dbConfig)
+		if err != nil {
+			t.Fatalf("Failed to connect to database: %v", err)
+		}
+		require.NoError(t, err)
+		// defer pool.Close(context.Background())
+		defer pool.Close()
+
+		_, err = pool.Exec(ctx, `INSERT INTO users (
 	  name,
 	  email,
 	  sub_id,
@@ -101,9 +113,10 @@ func TestConnectDB(t *testing.T) {
 	   NOW()
 	  )
 	   ;`,
-				"John Doe", "john.doe@example.com", "SUB987654321", true, "in_progress", time.Now(), time.Now())
-			require.NoError(t, err)
-		})*/
+		// "John Doe", "john.doe@example.com", "SUB987654321", true, "in_progress", time.Now(), time.Now()
+		)
+		require.NoError(t, err)
+	})
 	/*t.Run("Test inserting a user", func(t *testing.T) {
 		t.Cleanup(func() {
 			// 3. In each test, reset the DB to its snapshot state.
