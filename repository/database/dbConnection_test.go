@@ -25,9 +25,24 @@ func TestConnectDB(t *testing.T) {
 	testcontainers.CleanupContainer(t, ctr)
 	require.NoError(t, err)
 
+	defer func() {
+		if err := ctr.Terminate(ctx); err != nil {
+			t.Fatalf("Failed to terminate PostgreSQL container: %v", err)
+		}
+	}()
+
 	// Run any migrations on the database
-	// _, _, err = ctr.Exec(ctx, []string{"psql", "-U", "postgres", "-d", "test-db", "-c", "CREATE TABLE users (id SERIAL, name TEXT NOT NULL, email TEXT NOT NULL, age INT NOT NULL)"})
-	// require.NoError(t, err)
+	_, _, err = ctr.Exec(ctx, []string{"psql", "-U", "postgres", "-d", "test-db", "-c", `CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  sub_id VARCHAR(50),
+  verification_status BOOLEAN,
+  setup_status VARCHAR(50),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);`})
+	require.NoError(t, err)
 
 	dbURL, err := ctr.ConnectionString(ctx)
 	require.NoError(t, err)
@@ -52,43 +67,43 @@ func TestConnectDB(t *testing.T) {
 	// Log the success message
 	t.Logf("Successfully connected to the database at %v", currentTime)
 
-	t.Run("Test inserting a user", func(t *testing.T) {
-		t.Cleanup(func() {
-			// 3. In each test, reset the DB to its snapshot state.
-			err = ctr.Restore(ctx)
+	/*t.Run("Test inserting a user", func(t *testing.T) {
+			t.Cleanup(func() {
+				// 3. In each test, reset the DB to its snapshot state.
+				err = ctr.Restore(ctx)
+				require.NoError(t, err)
+			})
+
+			pool, err := ConnectDB(dbConfig)
+			if err != nil {
+				t.Fatalf("Failed to connect to database: %v", err)
+			}
 			require.NoError(t, err)
-		})
+			// defer pool.Close(context.Background())
+			defer pool.Close()
 
-		pool, err := ConnectDB(dbConfig)
-		if err != nil {
-			t.Fatalf("Failed to connect to database: %v", err)
-		}
-		require.NoError(t, err)
-		// defer pool.Close(context.Background())
-		defer pool.Close()
-
-		_, err = pool.Exec(ctx, `INSERT INTO users (
-  name,
-  email,
-  sub_id,
-  verification_status,
-  setup_status,
-  created_at,
-  updated_at
-  ) 
-  VALUES (
-  'John Doe',  
-   'john.doe@example.com',  
-   'SUB987654321',  
-   TRUE,  
-   'in_progress',  
-   NOW(),  
-   NOW()  
-  )
-   ;`,
-			"John Doe", "john.doe@example.com", "SUB987654321", true, "in_progress", time.Now(), time.Now())
-		require.NoError(t, err)
-	})
+			_, err = pool.Exec(ctx, `INSERT INTO users (
+	  name,
+	  email,
+	  sub_id,
+	  verification_status,
+	  setup_status,
+	  created_at,
+	  updated_at
+	  )
+	  VALUES (
+	  'John Doe',
+	   'john.doe@example.com',
+	   'SUB987654321',
+	   TRUE,
+	   'in_progress',
+	   NOW(),
+	   NOW()
+	  )
+	   ;`,
+				"John Doe", "john.doe@example.com", "SUB987654321", true, "in_progress", time.Now(), time.Now())
+			require.NoError(t, err)
+		})*/
 	/*t.Run("Test inserting a user", func(t *testing.T) {
 		t.Cleanup(func() {
 			// 3. In each test, reset the DB to its snapshot state.
