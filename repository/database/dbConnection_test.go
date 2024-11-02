@@ -54,7 +54,7 @@ func TestConnectDB(t *testing.T) {
 
 	// Run any migrations on the database
 	_, _, err = ctr.Exec(ctx, []string{"psql", "-U", "postgres", "-d", "test-db", "-c", `CREATE TABLE users (
-	
+	id SERIAL PRIMARY KEY,
 		name VARCHAR(255) NOT NULL,
 		email VARCHAR(255) NOT NULL,
 		sub_id VARCHAR(50),
@@ -95,6 +95,7 @@ func TestConnectDB(t *testing.T) {
 		defer pool.Close()
 
 		_, err = pool.Exec(ctx, `INSERT INTO users (
+		id,
 	  name,
 	  email,
 	  sub_id,
@@ -104,6 +105,7 @@ func TestConnectDB(t *testing.T) {
 	  updated_at
 	  )
 	  VALUES (
+	  1,
 	  'John Doe',
 	   'john.doe@example.com',
 	   'SUB987654321',
@@ -115,6 +117,33 @@ func TestConnectDB(t *testing.T) {
 	   ;`,
 		// "John Doe", "john.doe@example.com", "SUB987654321", true, "in_progress", time.Now(), time.Now()
 		)
+		require.NoError(t, err)
+
+		var name string
+		var id int64
+		err = pool.QueryRow(context.Background(), "SELECT name, id FROM users LIMIT 1").Scan(&name, &id)
+		require.NoError(t, err)
+
+		require.Equal(t, "John Doe", name)
+		require.EqualValues(t, 1, id)
+	})
+
+	t.Run("Test getting all users", func(t *testing.T) {
+		t.Cleanup(func() {
+			// 3. In each test, reset the DB to its snapshot state.
+			err = ctr.Restore(ctx)
+			require.NoError(t, err)
+		})
+
+		pool, err := ConnectDB(dbConfig)
+		if err != nil {
+			t.Fatalf("Failed to connect to database: %v", err)
+		}
+		require.NoError(t, err)
+		// defer pool.Close(context.Background())
+		defer pool.Close()
+
+		_, err = pool.Exec(ctx, "SELECT * FROM users") // "John Doe", "john.doe@example.com", "SUB987654321", true, "in_progress", time.Now(), time.Now()
 		require.NoError(t, err)
 	})
 	/*t.Run("Test inserting a user", func(t *testing.T) {
