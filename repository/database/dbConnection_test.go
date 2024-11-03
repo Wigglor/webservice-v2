@@ -127,7 +127,8 @@ func TestConnectDB(t *testing.T) {
 		require.NoError(t, err)
 
 		var name string
-		var id int64
+		// var id int64
+		var id int32
 		err = pool.QueryRow(context.Background(), "SELECT name, id FROM users LIMIT 1").Scan(&name, &id)
 		require.NoError(t, err)
 
@@ -158,11 +159,12 @@ func TestConnectDB(t *testing.T) {
 		t.Logf("Response body: %s", string(bodyBytes))
 		// -----------------------------------------------
 		// -----------------------------------------------
-		/*// req2, err := http.NewRequest("GET", testServer.URL+"/api/user/1", nil)
-		req2, err := http.NewRequest("GET", fmt.Sprintf("%s/api/user/%d", testServer.URL, 1), nil)
+		userUrl := testServer.URL + "/api/user/1"
+		req2, err := http.NewRequest("GET", userUrl, nil)
+		// req2, err := http.NewRequest("GET", fmt.Sprintf("%s/api/user/%d", testServer.URL, 1), nil)
 		// 	require.NoError(t, err)
 		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Content-Type", "application/json")
 
 		resp2, err := client.Do(req2)
 		require.NoError(t, err)
@@ -172,7 +174,8 @@ func TestConnectDB(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		t.Logf("Response body user ID: %s", string(bodyBytes2))*/
+		t.Logf("URL string: %s", userUrl)
+		t.Logf("Response body user ID: %s", string(bodyBytes2))
 
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
@@ -194,6 +197,73 @@ func TestConnectDB(t *testing.T) {
 
 		_, err = pool.Exec(ctx, "SELECT * FROM users") // "John Doe", "john.doe@example.com", "SUB987654321", true, "in_progress", time.Now(), time.Now()
 		require.NoError(t, err)
+	})
+
+	t.Run("Test get all user by id - httptest", func(t *testing.T) {
+		t.Cleanup(func() {
+			// 3. In each test, reset the DB to its snapshot state.
+			err = ctr.Restore(ctx)
+			require.NoError(t, err)
+		})
+
+		pool, err := ConnectDB(dbConfig)
+		if err != nil {
+			t.Fatalf("Failed to connect to database: %v", err)
+		}
+		require.NoError(t, err)
+		// defer pool.Close(context.Background())
+		defer pool.Close()
+
+		_, err = pool.Exec(ctx, `INSERT INTO users (
+			id,
+		  name,
+		  email,
+		  sub_id,
+		  verification_status,
+		  setup_status,
+		  created_at,
+		  updated_at
+		  )
+		  VALUES (
+		  1,
+		  'John Doe',
+		   'john.doe@example.com',
+		   'SUB987654321',
+		   TRUE,
+		   'in_progress',
+		   NOW(),
+		   NOW()
+		  )
+		   ;`,
+		// "John Doe", "john.doe@example.com", "SUB987654321", true, "in_progress", time.Now(), time.Now()
+		)
+		require.NoError(t, err)
+
+		router := router.SetupRouter(pool)
+
+		testServer := httptest.NewServer(router)
+		defer testServer.Close()
+		client := testServer.Client()
+
+		userUrl := testServer.URL + "/api/user/1"
+		req, err := http.NewRequest("GET", userUrl, nil)
+		// req2, err := http.NewRequest("GET", fmt.Sprintf("%s/api/user/%d", testServer.URL, 1), nil)
+		// 	require.NoError(t, err)
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		bodyBytes2, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		t.Logf("URL string: %s", userUrl)
+		t.Logf("Response body user ID: %s", string(bodyBytes2))
+
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	/*t.Run("Test getting all users - httptest", func(t *testing.T) {
