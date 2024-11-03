@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/Wigglor/webservice-v2/repository"
-	// "github.com/go-chi/chi"
 )
 
 type UserHandler struct {
@@ -19,10 +18,6 @@ type UserHandler struct {
 func NewUserHandler(repo repository.UserRepository) *UserHandler {
 	return &UserHandler{Repo: repo}
 }
-
-// func (h *UserHandler) helloWorld(w http.ResponseWriter, r *http.Request) {
-// 	fmt.Fprintf(w, "Hello there, World!")
-// }
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Repo.QueryAllUsers(r.Context())
@@ -39,7 +34,6 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
-	// userIdStr := chi.URLParam(r, "id")
 	userIdStr := strings.TrimPrefix(r.URL.Path, "/api/user/")
 	println(userIdStr)
 	userId, err := strconv.ParseInt(userIdStr, 10, 32)
@@ -47,10 +41,11 @@ func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
-	}
 
+	}
 	user, err := h.Repo.GetUserByID(r.Context(), int32(userId))
 	if err != nil {
+		log.Printf("Failed to fetch user with ID %d: %v", userId, err)
 		http.Error(w, "Failed to fetch user", http.StatusInternalServerError)
 		return
 	}
