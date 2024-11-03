@@ -11,16 +11,21 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Wigglor/webservice-v2/handlers"
-	"github.com/Wigglor/webservice-v2/repository"
 	"github.com/Wigglor/webservice-v2/repository/database"
 	"github.com/Wigglor/webservice-v2/router"
 	"github.com/joho/godotenv"
 )
 
+func Run() {
+
+}
+
 func main() {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	/*
+		Moved below
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	*/
 
 	dbConfig, err := loadConfig()
 	if err != nil {
@@ -64,12 +69,18 @@ func main() {
 		return
 	}*/
 
+	// Moved from above
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
 	var wg sync.WaitGroup
 
-	userRepo := repository.NewUserRepository(pool)
+	/*userRepo := repository.NewUserRepository(pool)
 	userHandler := handlers.NewUserHandler(userRepo) // changfrom router to controller/handler folder
 	// userHandler := router.NewUserHandler(userRepo) // changfrom router to controller/handler folder
-	router := router.Routes(userHandler)
+	router := router.Routes(userHandler)*/
+
+	router := router.SetupRouter(pool)
 
 	srv := &http.Server{
 		Addr:    ":8080",
@@ -80,15 +91,9 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			// if err := srv.ListenAndServe();  err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
-			// log.Printf("HTTP server error: %v", err)
 			// quit <- os.Interrupt
 		}
-		// // if err := http.ListenAndServe(":8080", router); err != nil {
-		// if err := srv.ListenAndServe(); err != nil {
-		// 	log.Fatalf("HTTP server error: %v", err)
-		// }
 	}()
 	log.Print("Server Started")
 
@@ -109,13 +114,6 @@ func main() {
 }
 
 func ConcatDSN() string {
-	// host := os.Getenv("DB_HOST")
-	// username := os.Getenv("DB_USER")
-	// password := os.Getenv("DB_PASSWORD")
-	// databaseName := os.Getenv("DB_NAME")
-	// port := os.Getenv("DB_PORT")
-
-	// return fmt.Sprintf("%s://%s:%s@db:%s/%s", host, username, password, port, databaseName)
 	host := os.Getenv("DB_HOST")
 	username := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
@@ -123,7 +121,6 @@ func ConcatDSN() string {
 	port := os.Getenv("DB_PORT")
 
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", username, password, host, port, databaseName)
-	// return fmt.Sprintf("%s://%s:%s@localhost:%s/%s", host, username, password, port, databaseName)
 }
 
 func loadConfig() (database.Config, error) {
