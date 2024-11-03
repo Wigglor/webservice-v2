@@ -67,10 +67,25 @@ SELECT
   created_at,
   updated_at
 FROM
-  user_tests
+  users
 WHERE
   id = $1
 `, id)
+	// 	row := m.db.QueryRow(ctx, `-- name: GetUserByID :one
+	// SELECT
+	//   id,
+	//   name,
+	//   email,
+	//   sub_id,
+	//   verification_status,
+	//   setup_status,
+	//   created_at,
+	//   updated_at
+	// FROM
+	//   user_tests
+	// WHERE
+	//   id = $1
+	// `, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
