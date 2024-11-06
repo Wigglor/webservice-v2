@@ -62,13 +62,6 @@ func main() {
 	}
 	defer pool.Close()
 
-	/*err = pool.Ping(ctx)
-	if err != nil {
-		log.Fatalf("Failed to Ping...: %v", err)
-		pool.Close() // should i have this here???
-		return
-	}*/
-
 	// Moved from above
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
