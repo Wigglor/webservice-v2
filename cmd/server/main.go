@@ -62,7 +62,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	//Delete???!
+	//Delete
 	/*err = pool.Ping(ctx)
 	if err != nil {
 		log.Fatalf("Failed to Ping...: %v", err)
