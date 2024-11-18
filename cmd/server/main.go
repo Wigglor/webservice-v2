@@ -103,7 +103,7 @@ func main() {
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
-	//why shutdown context???
+	//why shutdown context??? -- look up
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("Server Shutdown Failed:%+v", err)
