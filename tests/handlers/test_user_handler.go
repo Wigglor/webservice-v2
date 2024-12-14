@@ -1,4 +1,4 @@
-package tests
+package handlers
 
 import (
 	"io"
@@ -8,12 +8,13 @@ import (
 
 	"github.com/Wigglor/webservice-v2/repository/database"
 	"github.com/Wigglor/webservice-v2/router"
+	"github.com/Wigglor/webservice-v2/tests"
 	"github.com/stretchr/testify/require"
 )
 
 func TestHandlers(t *testing.T) {
 	// Initialize the test setup
-	setup := SetupTestDB(t)
+	setup := tests.SetupTestDB(t)
 
 	t.Cleanup(func() {
 		setup.RestoreTestDB(t)
