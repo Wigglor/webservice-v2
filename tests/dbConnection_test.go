@@ -1,4 +1,4 @@
-package database
+package tests
 
 import (
 	"testing"
@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/Wigglor/webservice-v2/repository/database"
 	"github.com/Wigglor/webservice-v2/router"
 )
 
@@ -23,7 +24,7 @@ func TestConnectDB(t *testing.T) {
 			setup.RestoreTestDB(t)
 		})
 
-		pool, err := ConnectDB(setup.DBConfig)
+		pool, err := database.ConnectDB(setup.DBConfig)
 		require.NoError(t, err)
 		defer pool.Close()
 
@@ -44,7 +45,7 @@ func TestConnectDB(t *testing.T) {
 	})
 }
 
-func TestHandlers(t *testing.T) {
+func TestHandlers2(t *testing.T) {
 	// Initialize the test setup
 	setup := SetupTestDB(t)
 
@@ -53,7 +54,7 @@ func TestHandlers(t *testing.T) {
 	})
 
 	// Connect to the database
-	pool, err := ConnectDB(setup.DBConfig)
+	pool, err := database.ConnectDB(setup.DBConfig)
 	require.NoError(t, err)
 	defer pool.Close()
 

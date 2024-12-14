@@ -1,4 +1,4 @@
-package database
+package tests
 
 import (
 	"context"
@@ -7,11 +7,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+
+	"github.com/Wigglor/webservice-v2/repository/database"
 )
 
 type TestSetup struct {
 	Container *postgres.PostgresContainer
-	DBConfig  Config
+	DBConfig  database.Config
 	Context   context.Context
 }
 
@@ -40,7 +42,7 @@ func SetupTestDB(t *testing.T) *TestSetup {
 	dbURL, err := ctr.ConnectionString(ctx)
 	require.NoError(t, err)
 
-	dbConfig := Config{
+	dbConfig := database.Config{
 		DSN:             dbURL,
 		MaxConns:        10,
 		MinConns:        1,
