@@ -1,6 +1,80 @@
 package database
 
 import (
+	"testing"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/stretchr/testify/require"
+
+	//----------------
+	"io"
+	"net/http"
+	"net/http/httptest"
+
+	"github.com/Wigglor/webservice-v2/router"
+)
+
+func TestConnectDB(t *testing.T) {
+	// Initialize the test setup
+	setup := SetupTestDB(t)
+
+	t.Run("Test inserting a user", func(t *testing.T) {
+		t.Cleanup(func() {
+			setup.RestoreTestDB(t)
+		})
+
+		pool, err := ConnectDB(setup.DBConfig)
+		require.NoError(t, err)
+		defer pool.Close()
+
+		_, err = pool.Exec(setup.Context, `INSERT INTO users (
+			id, name, email, sub_id, verification_status, setup_status, created_at, updated_at
+		) VALUES (
+			1, 'John Doe', 'john.doe@example.com', 'SUB987654321', TRUE, 'in_progress', NOW(), NOW()
+		);`)
+		require.NoError(t, err)
+
+		var name string
+		var id int32
+		err = pool.QueryRow(setup.Context, "SELECT name, id FROM users LIMIT 1").Scan(&name, &id)
+		require.NoError(t, err)
+
+		require.Equal(t, "John Doe", name)
+		require.EqualValues(t, 1, id)
+	})
+}
+
+func TestHandlers(t *testing.T) {
+	// Initialize the test setup
+	setup := SetupTestDB(t)
+
+	t.Cleanup(func() {
+		setup.RestoreTestDB(t)
+	})
+
+	// Connect to the database
+	pool, err := ConnectDB(setup.DBConfig)
+	require.NoError(t, err)
+	defer pool.Close()
+
+	// Set up the router with the database
+	router := router.SetupRouter(pool)
+	testServer := httptest.NewServer(router)
+	defer testServer.Close()
+
+	client := testServer.Client()
+	resp, err := client.Get(testServer.URL + "/api/users")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	t.Logf("Response: %s", string(bodyBytes))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+/*import (
 	"context"
 	"io"
 	"net/http"
@@ -77,14 +151,14 @@ func TestConnectDB(t *testing.T) {
 	err = ctr.Snapshot(ctx)
 	require.NoError(t, err)
 
-	/*var currentTime time.Time
-	err = pool.QueryRow(ctx, "SELECT NOW()").Scan(&currentTime)
-	if err != nil {
-		t.Fatalf("Failed to execute test query: %v", err)
-	}
+	// var currentTime time.Time
+	// err = pool.QueryRow(ctx, "SELECT NOW()").Scan(&currentTime)
+	// if err != nil {
+	// 	t.Fatalf("Failed to execute test query: %v", err)
+	// }
 
-	// Log the success message
-	t.Logf("Successfully connected to the database at %v", currentTime)*/
+	// // Log the success message
+	// t.Logf("Successfully connected to the database at %v", currentTime)
 
 	t.Run("Test inserting a user", func(t *testing.T) {
 		t.Cleanup(func() {
@@ -266,45 +340,45 @@ func TestConnectDB(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	/*t.Run("Test getting all users - httptest", func(t *testing.T) {
-		t.Cleanup(func() {
-			// 3. In each test, reset the DB to its snapshot state.
-			err = ctr.Restore(ctx)
-			require.NoError(t, err)
-		})
+	// t.Run("Test getting all users - httptest", func(t *testing.T) {
+	// 	t.Cleanup(func() {
+	// 		// 3. In each test, reset the DB to its snapshot state.
+	// 		err = ctr.Restore(ctx)
+	// 		require.NoError(t, err)
+	// 	})
 
-		pool, err := ConnectDB(dbConfig)
-		if err != nil {
-			t.Fatalf("Failed to connect to database: %v", err)
-		}
-		require.NoError(t, err)
-		// defer pool.Close(context.Background())
-		defer pool.Close()
+	// 	pool, err := ConnectDB(dbConfig)
+	// 	if err != nil {
+	// 		t.Fatalf("Failed to connect to database: %v", err)
+	// 	}
+	// 	require.NoError(t, err)
+	// 	// defer pool.Close(context.Background())
+	// 	defer pool.Close()
 
-		router := router.SetupRouter(pool)
+	// 	router := router.SetupRouter(pool)
 
-		testServer := httptest.NewServer(router)
-		println(testServer.URL)
-		println(testServer.URL + "/api/users")
-		defer testServer.Close()
-		client := testServer.Client()
-		req, err := http.NewRequest("GET", testServer.URL+"/api/users", nil)
-		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
+	// 	testServer := httptest.NewServer(router)
+	// 	println(testServer.URL)
+	// 	println(testServer.URL + "/api/users")
+	// 	defer testServer.Close()
+	// 	client := testServer.Client()
+	// 	req, err := http.NewRequest("GET", testServer.URL+"/api/users", nil)
+	// 	require.NoError(t, err)
+	// 	req.Header.Set("Content-Type", "application/json")
 
-		resp, err := client.Do(req)
-		// t.Logf("Response body: %s", resp.Body)
-		require.NoError(t, err)
-		defer resp.Body.Close()
+	// 	resp, err := client.Do(req)
+	// 	// t.Logf("Response body: %s", resp.Body)
+	// 	require.NoError(t, err)
+	// 	defer resp.Body.Close()
 
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		t.Logf("Response body: %s", string(bodyBytes))
+	// 	bodyBytes, err := io.ReadAll(resp.Body)
+	// 	if err != nil {
+	// 		t.Fatalf("Failed to read response body: %v", err)
+	// 	}
+	// 	t.Logf("Response body: %s", string(bodyBytes))
 
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-	})*/
+	// 	require.Equal(t, http.StatusOK, resp.StatusCode)
+	// })
 
 	// t.Run("Test get all user by id - httptest", func(t *testing.T) {
 	// 	t.Cleanup(func() {
@@ -337,77 +411,79 @@ func TestConnectDB(t *testing.T) {
 
 	// 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	// })
-	/*t.Run("Test inserting a user", func(t *testing.T) {
-		t.Cleanup(func() {
-			// 3. In each test, reset the DB to its snapshot state.
-			err = ctr.Restore(ctx)
-			require.NoError(t, err)
-		})
+	// t.Run("Test inserting a user", func(t *testing.T) {
+	// 	t.Cleanup(func() {
+	// 		// 3. In each test, reset the DB to its snapshot state.
+	// 		err = ctr.Restore(ctx)
+	// 		require.NoError(t, err)
+	// 	})
 
-		pool, err := ConnectDB(dbConfig)
-		if err != nil {
-			t.Fatalf("Failed to connect to database: %v", err)
-		}
-		// Ensure the pool is closed after the test
-		// defer pool.Close()
-		// conn, err := pgx.Connect(context.Background(), dbURL)
-		require.NoError(t, err)
-		// defer pool.Close(context.Background())
-		defer pool.Close()
+	// 	pool, err := ConnectDB(dbConfig)
+	// 	if err != nil {
+	// 		t.Fatalf("Failed to connect to database: %v", err)
+	// 	}
+	// 	// Ensure the pool is closed after the test
+	// 	// defer pool.Close()
+	// 	// conn, err := pgx.Connect(context.Background(), dbURL)
+	// 	require.NoError(t, err)
+	// 	// defer pool.Close(context.Background())
+	// 	defer pool.Close()
 
-		_, err = pool.Exec(ctx, "INSERT INTO users(name, age) VALUES ($1, $2)", "test", 42)
-		require.NoError(t, err)
+	// 	_, err = pool.Exec(ctx, "INSERT INTO users(name, age) VALUES ($1, $2)", "test", 42)
+	// 	require.NoError(t, err)
 
-		var name string
-		var age int64
-		err = pool.QueryRow(context.Background(), "SELECT name, age FROM users LIMIT 1").Scan(&name, &age)
-		require.NoError(t, err)
+	// 	var name string
+	// 	var age int64
+	// 	err = pool.QueryRow(context.Background(), "SELECT name, age FROM users LIMIT 1").Scan(&name, &age)
+	// 	require.NoError(t, err)
 
-		require.Equal(t, "test", name)
-		require.EqualValues(t, 42, age)
-	})*/
+	// 	require.Equal(t, "test", name)
+	// 	require.EqualValues(t, 42, age)
+	// })
 	// Start a PostgreSQL container
-	/*pgContainer, err := postgres.Run(ctx,
-		testcontainers.WithImage("postgres:15.3-alpine"),
-		postgres.WithInitScripts(filepath.Join("..", "testdata", "init-db.sql")),
-		postgres.WithDatabase("test-db"),
-		postgres.WithUsername("postgres"),
-		postgres.WithPassword("postgres"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).WithStartupTimeout(5*time.Second)),
-	)
-	if err != nil {
-		t.Fatalf("Failed to start PostgreSQL container: %v", err)
-	}
+	//---------------------
+	// pgContainer, err := postgres.Run(ctx,
+	// 	testcontainers.WithImage("postgres:15.3-alpine"),
+	// 	postgres.WithInitScripts(filepath.Join("..", "testdata", "init-db.sql")),
+	// 	postgres.WithDatabase("test-db"),
+	// 	postgres.WithUsername("postgres"),
+	// 	postgres.WithPassword("postgres"),
+	// 	testcontainers.WithWaitStrategy(
+	// 		wait.ForLog("database system is ready to accept connections").
+	// 			WithOccurrence(2).WithStartupTimeout(5*time.Second)),
+	// )
+	// if err != nil {
+	// 	t.Fatalf("Failed to start PostgreSQL container: %v", err)
+	// }
 
-	t.Cleanup(func() {
-		if err := pgContainer.Terminate(ctx); err != nil {
-			t.Fatalf("failed to terminate pgContainer: %s", err)
-		}
-	})
-	dsn, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
-	assert.NoError(t, err)
+	// t.Cleanup(func() {
+	// 	if err := pgContainer.Terminate(ctx); err != nil {
+	// 		t.Fatalf("failed to terminate pgContainer: %s", err)
+	// 	}
+	// })
+	// dsn, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	// assert.NoError(t, err)
 
-	dbConfig := Config{
-		DSN:             dsn,
-		MaxConns:        10,
-		MinConns:        1,
-		MaxConnLifetime: time.Hour,
-		MaxConnIdleTime: 30 * time.Minute,
-	}
+	// dbConfig := Config{
+	// 	DSN:             dsn,
+	// 	MaxConns:        10,
+	// 	MinConns:        1,
+	// 	MaxConnLifetime: time.Hour,
+	// 	MaxConnIdleTime: 30 * time.Minute,
+	// }
 
-	pool, err := ConnectDB(dbConfig)
-	if err != nil {
-		t.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer pool.Close()
+	// pool, err := ConnectDB(dbConfig)
+	// if err != nil {
+	// 	t.Fatalf("Failed to connect to database: %v", err)
+	// }
+	// defer pool.Close()
 
-	var currentTime time.Time
-	err = pool.QueryRow(ctx, "SELECT NOW()").Scan(&currentTime)
-	if err != nil {
-		t.Fatalf("Failed to execute test query: %v", err)
-	}
+	// var currentTime time.Time
+	// err = pool.QueryRow(ctx, "SELECT NOW()").Scan(&currentTime)
+	// if err != nil {
+	// 	t.Fatalf("Failed to execute test query: %v", err)
+	// }
 
-	t.Logf("Successfully connected to the database at %v", currentTime)*/
+	// t.Logf("Successfully connected to the database at %v", currentTime)
 }
+*/
