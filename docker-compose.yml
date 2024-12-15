@@ -31,6 +31,34 @@ services:
       - .:/app
     depends_on:
       - db
+      - migrations
+
+  migrations:
+    image: migrate/migrate
+    container_name: migrate
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - DATABASE_HOST=${DB_HOST}
+      - DATABASE_PORT=${DB_PORT}
+    entrypoint: >
+      sh -c "migrate -path=/migrations -database postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable force 1 &&
+      migrate -path=/migrations -database postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable up"
+    # entrypoint: [
+    #     "sh",
+    #     "-c",
+    #     "migrate -path=/migrations -database 'postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable'",
+    #     # "migrate -path=/migrations -database 'postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable' up",
+    #     "force",
+    #     "1",
+    #     "up",
+    #     #       "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable",
+    #   ]
+    depends_on:
+      - db
+    volumes:
+      - ./repository/database/migrations:/migrations
 
   db:
     image: postgres:latest
@@ -44,6 +72,11 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "1234:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   postgresdb_test:
     image: postgres:latest
