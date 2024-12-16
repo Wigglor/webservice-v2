@@ -34,7 +34,7 @@ func (m *mockUserModel) GetUserByID(ctx context.Context, id int32) (repository.U
 func TestGetUsers(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users", nil)
-
+	/*handler := router.UserHandler{Repo: &mockUserModel{}}*/
 	handler := handlers.UserHandler{Repo: &mockUserModel{}}
 	http.HandlerFunc(handler.GetUsers).ServeHTTP(rec, req)
 	expected := []repository.User{
