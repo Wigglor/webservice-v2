@@ -17,6 +17,7 @@ import (
 	"github.com/Wigglor/webservice-v2/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/cors"
 	// "github.com/go-chi/chi/v5"
 	// chi_middleware "github.com/go-chi/chi/v5/middleware"
 	// "github.com/go-chi/cors"
@@ -32,7 +33,7 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// CORS Headers.
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8000")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
@@ -41,7 +42,15 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 	))
 	mux.Handle("/api/private2", ValidateJWT(http.HandlerFunc(helloAuth)))
 	mux.Handle("/api/private3", middlewares.EnsureValidToken()(http.HandlerFunc(helloAuth)))
-	return mux
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // or "*"
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+	})
+	return c.Handler(mux)
+	// return mux
+
 	/*router := chi.NewRouter()
 	router.Use(chi_middleware.Recoverer)
 	router.Use(chi_middleware.Logger)
