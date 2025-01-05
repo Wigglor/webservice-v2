@@ -54,3 +54,24 @@ func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
+func (h *UserHandler) CheckUserBySubId(w http.ResponseWriter, r *http.Request) {
+	userSubIdStr := strings.TrimPrefix(r.URL.Path, "/api/check-user/")
+	println(userSubIdStr)
+	// userId, err := strconv.ParseInt(userSubIdStr, 10, 32)
+	// println(userId)
+	// if err != nil {
+	// 	http.Error(w, "Invalid user ID", http.StatusBadRequest)
+	// 	return
+
+	// }
+	user, err := h.Repo.CheckUserBySubId(r.Context(), string(userSubIdStr))
+	if err != nil {
+		log.Printf("Failed to fetch user with ID %s: %v", userSubIdStr, err)
+		http.Error(w, "Failed to fetch user", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+}

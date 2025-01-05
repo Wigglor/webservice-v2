@@ -99,6 +99,35 @@ WHERE
 	)
 	return i, err
 }
+func (m *UserRepo) CheckUserBySubId(ctx context.Context, subId string) (User, error) {
+	row := m.db.QueryRow(ctx, `-- name: CheckUserBySubId :one
+SELECT
+  id,
+  name,
+  email,
+  sub_id,
+  verification_status,
+  setup_status,
+  created_at,
+  updated_at
+FROM
+  users
+WHERE
+  sub_id = $1
+`, subId)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.SubID,
+		&i.VerificationStatus,
+		&i.SetupStatus,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 // func (m UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
 func (m *UserRepo) QueryCreateUser(ctx context.Context, arg CreateUserParams) (User, error) {

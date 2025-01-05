@@ -20,4 +20,5 @@ type User struct {
 type UserRepository interface {
 	QueryAllUsers(ctx context.Context) ([]User, error)
 	GetUserByID(ctx context.Context, id int32) (User, error)
+	CheckUserBySubId(ctx context.Context, subId string) (User, error)
 }
