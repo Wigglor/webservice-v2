@@ -1,0 +1,5 @@
+ALTER TABLE users
+  DROP CONSTRAINT IF EXISTS users_email_uq;
+
+ALTER TABLE users
+  DROP CONSTRAINT IF EXISTS users_subid_uq;
