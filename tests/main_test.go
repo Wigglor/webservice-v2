@@ -36,6 +36,11 @@ func (m *mockUserModel) CheckUserBySubId(ctx context.Context, subId string) (rep
 	user := repository.User{ID: 1, Name: "Joe Doe", Email: "johndoe@email.com", SubID: "subid_123abc", VerificationStatus: true, SetupStatus: "pending"}
 	return user, nil
 }
+
+func (m *mockUserModel) QueryCreateUser(ctx context.Context, arg repository.CreateUserParams) (repository.User, error) {
+	user := repository.User{ID: 1, Name: "Joe Doe", Email: "johndoe@email.com", SubID: "subid_123abc", VerificationStatus: true, SetupStatus: "pending"}
+	return user, nil
+}
 func TestGetUsers(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users", nil)
