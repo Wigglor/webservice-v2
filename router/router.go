@@ -14,6 +14,8 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 
+	// "github.com/auth0/go-jwt-middleware/v2/logging"
+
 	"github.com/Wigglor/webservice-v2/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -50,7 +52,7 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
 	})
-	return c.Handler(mux)
+	return middlewares.LoggerMiddleware(c.Handler(mux))
 	// return mux
 
 	/*router := chi.NewRouter()

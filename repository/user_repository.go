@@ -6,14 +6,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type CreateUserParams struct {
-	Name               string `json:"name"`
-	Email              string `json:"email"`
-	SubId              string `json:"subId"`
-	VerificationStatus bool   `json:"verificationStatus"`
-	SetupStatus        string `json:"setupStatus"`
-}
-
 type UserRepo struct {
 	db *pgxpool.Pool
 }
@@ -99,6 +91,7 @@ WHERE
 	)
 	return i, err
 }
+
 func (m *UserRepo) CheckUserBySubId(ctx context.Context, subId string) (User, error) {
 	row := m.db.QueryRow(ctx, `-- name: CheckUserBySubId :one
 SELECT

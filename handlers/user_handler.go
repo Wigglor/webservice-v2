@@ -106,6 +106,7 @@ func (h *UserHandler) GetOrCreateUserBySubId(w http.ResponseWriter, r *http.Requ
 		// return
 		return
 	}
+	// log.Println(user)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(user); err != nil {
 		// if err := json.NewEncoder(w).Encode(reqBody); err != nil {
