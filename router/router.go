@@ -28,7 +28,8 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 
 	mux.HandleFunc("GET /api/users", handler.GetUsers)
 	mux.HandleFunc("GET /api/user/{id}", handler.GetUserById)
-	mux.HandleFunc("GET /api/check-user/{subId}", handler.CheckUserBySubId)
+	// mux.HandleFunc("POST /api/check-user/{subId}", handler.GetOrCreateUserBySubId)
+	mux.HandleFunc("POST /api/check-user", handler.GetOrCreateUserBySubId)
 	// This route is only accessible if the user has a valid access_token.
 	mux.Handle("/api/private", middlewares.EnsureValidToken()(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

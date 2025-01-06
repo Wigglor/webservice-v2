@@ -25,6 +25,10 @@ https://dev.to/muhammedarifp/creating-a-simple-hello-world-web-application-with-
 - psql -U <postgres_user> -d <database_name>
 - SELECT \* FROM users;
 
+# Create migration files
+
+migrate create -ext sql -dir repository/database/migrations -seq name_of_the_migration
+
 - CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,

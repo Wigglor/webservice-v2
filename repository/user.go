@@ -21,4 +21,5 @@ type UserRepository interface {
 	QueryAllUsers(ctx context.Context) ([]User, error)
 	GetUserByID(ctx context.Context, id int32) (User, error)
 	CheckUserBySubId(ctx context.Context, subId string) (User, error)
+	QueryCreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 }

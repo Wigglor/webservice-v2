@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Wigglor/webservice-v2/repository"
+	"github.com/jackc/pgx/v5"
 )
 
 type UserHandler struct {
@@ -54,9 +56,26 @@ func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
-func (h *UserHandler) CheckUserBySubId(w http.ResponseWriter, r *http.Request) {
-	userSubIdStr := strings.TrimPrefix(r.URL.Path, "/api/check-user/")
-	println(userSubIdStr)
+
+func (h *UserHandler) GetOrCreateUserBySubId(w http.ResponseWriter, r *http.Request) {
+	// type RequestBody struct {
+	// 	Name               string `json:"name"`
+	// 	Email              string `json:"email"`
+	// 	VerificationStatus bool   `json:"verificationStatus"`
+	// 	SubId              string `json:"subId"`
+	// }
+
+	var reqBody repository.CreateUserParams
+
+	// 2. Decode the JSON from the request body into that struct
+	err := json.NewDecoder(r.Body).Decode(&reqBody)
+	if err != nil {
+		// Handle error (e.g., malformed JSON)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// userSubIdStr := strings.TrimPrefix(r.URL.Path, "/api/check-user/")
+	// println(userSubIdStr)
 	// userId, err := strconv.ParseInt(userSubIdStr, 10, 32)
 	// println(userId)
 	// if err != nil {
@@ -64,14 +83,33 @@ func (h *UserHandler) CheckUserBySubId(w http.ResponseWriter, r *http.Request) {
 	// 	return
 
 	// }
-	user, err := h.Repo.CheckUserBySubId(r.Context(), string(userSubIdStr))
+	user, err := h.Repo.CheckUserBySubId(r.Context(), reqBody.SubId)
 	if err != nil {
-		log.Printf("Failed to fetch user with ID %s: %v", userSubIdStr, err)
-		http.Error(w, "Failed to fetch user", http.StatusInternalServerError)
+		log.Printf("Failed to fetch user with Sub ID %s: %v", reqBody.SubId, err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			log.Println("No rows error")
+			log.Println(pgx.ErrNoRows)
+
+			createdUser, err := h.Repo.QueryCreateUser(r.Context(), reqBody)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			log.Println(createdUser)
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(createdUser); err != nil {
+				http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			}
+			return
+		}
+		// http.Error(w, "Failed to fetch user", http.StatusInternalServerError)
+		// return
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(user); err != nil {
+		// if err := json.NewEncoder(w).Encode(reqBody); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
 	}
 }

@@ -9,7 +9,7 @@ import (
 type CreateUserParams struct {
 	Name               string `json:"name"`
 	Email              string `json:"email"`
-	SubID              string `json:"subId"`
+	SubId              string `json:"subId"`
 	VerificationStatus bool   `json:"verificationStatus"`
 	SetupStatus        string `json:"setupStatus"`
 }
@@ -132,7 +132,7 @@ WHERE
 // func (m UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
 func (m *UserRepo) QueryCreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := m.db.QueryRow(ctx, `-- name: CreateUser :one
-INSERT INTO user_tests (
+INSERT INTO users (
   name,
   email,
   sub_id,
@@ -153,7 +153,7 @@ RETURNING
 `,
 		arg.Name,
 		arg.Email,
-		arg.SubID,
+		arg.SubId,
 		arg.VerificationStatus,
 		arg.SetupStatus,
 	)
