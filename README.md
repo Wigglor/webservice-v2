@@ -10,6 +10,13 @@
 
 SELECT \* FROM pg_catalog.pg_tables;
 
+If you need to drop the database volume and start all over, apply these commands:
+
+- docker-compose down -v --rmi all --remove-orphans
+- docker system prune --volumes -f
+
+Then you build your docker container again.
+
 ## docker stuff
 
 https://www.reddit.com/r/golang/comments/18qwci9/how_to_create_a_containerised_application_using/
