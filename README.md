@@ -24,6 +24,7 @@ https://dev.to/muhammedarifp/creating-a-simple-hello-world-web-application-with-
 - docker exec -it <container_id> bash
 - psql -U <postgres_user> -d <database_name>
 - SELECT \* FROM users;
+- list schemas \dnS
 
 # Create migration files
 
