@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -162,6 +163,59 @@ RETURNING
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+func (m *UserRepo) QueryCreateOrganization(ctx context.Context, arg CreateOrganizationParams) (ReturnOrgUser, error) {
+	tx, err := m.db.Begin(ctx)
+	if err != nil {
+		return ReturnOrgUser{}, fmt.Errorf("begin transaction: %w", err)
+	}
+
+	// If anything goes wrong, roll back
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	var org Organization
+	insertOrgQuery := `
+        INSERT INTO organizations (name, subscription_id, plan_type, subscription_status, next_billing_date)
+        VALUES ($1, $2, $3, $4, $5)
+		RETURNING
+        id, 
+		name, 
+		subscription_id, 
+		plan_type, 
+		subscription_status, 
+		next_billing_date
+    `
+	err = tx.QueryRow(ctx, insertOrgQuery, arg.Name, arg.SubscriptionId, arg.PlanType, arg.SubscriptionStatus, arg.NextBillingDate).Scan(&org.ID, &org.Name, &org.SubscriptionId, &org.PlanType, &org.SubscriptionStatus, &org.NextBillingDate)
+	if err != nil {
+		return ReturnOrgUser{}, fmt.Errorf("insert organization: %w", err)
+	}
+
+	// 2) Insert the membership into user_organizations
+	insertMembershipQuery := `
+	 INSERT INTO user_organizations (user_id, organization_id, role)
+	 VALUES ($1, $2, $3)
+	 RETURNING user_id, organization_id, role
+ `
+	var userOrg UserOrganization
+	err = tx.QueryRow(ctx, insertMembershipQuery, arg.UserId, org.ID, arg.Role).Scan(&userOrg.UserId, &userOrg.OrganizationId, &userOrg.Role)
+	if err != nil {
+		return ReturnOrgUser{}, fmt.Errorf("insert user_organization link: %w", err)
+	}
+
+	// 3) Commit if everything succeeded
+	if err = tx.Commit(ctx); err != nil {
+		return ReturnOrgUser{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return ReturnOrgUser{
+		org,
+		userOrg,
+	}, err
 }
 
 // type PostgresUserRepository struct {

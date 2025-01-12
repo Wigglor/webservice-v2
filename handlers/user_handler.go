@@ -114,3 +114,25 @@ func (h *UserHandler) GetOrCreateUserBySubId(w http.ResponseWriter, r *http.Requ
 		return
 	}
 }
+
+func (h *UserHandler) CreateOrganization(w http.ResponseWriter, r *http.Request) {
+	var reqBody repository.CreateOrganizationParams
+
+	err := json.NewDecoder(r.Body).Decode(&reqBody)
+	if err != nil {
+		// Handle error (e.g., malformed JSON)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	createdOrgUser, err := h.Repo.QueryCreateOrganization(r.Context(), reqBody)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(createdOrgUser); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+}
