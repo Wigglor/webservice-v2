@@ -188,9 +188,11 @@ func (m *UserRepo) QueryCreateOrganization(ctx context.Context, arg CreateOrgani
 		subscription_id, 
 		plan_type, 
 		subscription_status, 
-		next_billing_date
+		next_billing_date,
+		created_at,
+  		updated_at
     `
-	err = tx.QueryRow(ctx, insertOrgQuery, arg.Name, arg.SubscriptionId, arg.PlanType, arg.SubscriptionStatus, arg.NextBillingDate).Scan(&org.ID, &org.Name, &org.SubscriptionId, &org.PlanType, &org.SubscriptionStatus, &org.NextBillingDate)
+	err = tx.QueryRow(ctx, insertOrgQuery, arg.Name, arg.SubscriptionId, arg.PlanType, arg.SubscriptionStatus, arg.NextBillingDate).Scan(&org.ID, &org.Name, &org.SubscriptionId, &org.PlanType, &org.SubscriptionStatus, &org.NextBillingDate, &org.CreatedAt, &org.UpdatedAt)
 	if err != nil {
 		return ReturnOrgUser{}, fmt.Errorf("insert organization: %w", err)
 	}
@@ -199,12 +201,23 @@ func (m *UserRepo) QueryCreateOrganization(ctx context.Context, arg CreateOrgani
 	insertMembershipQuery := `
 	 INSERT INTO user_organizations (user_id, organization_id, role)
 	 VALUES ($1, $2, $3)
-	 RETURNING user_id, organization_id, role
+	 RETURNING user_id, organization_id, role, created_at
  `
 	var userOrg UserOrganization
-	err = tx.QueryRow(ctx, insertMembershipQuery, arg.UserId, org.ID, arg.Role).Scan(&userOrg.UserId, &userOrg.OrganizationId, &userOrg.Role)
+	err = tx.QueryRow(ctx, insertMembershipQuery, arg.UserId, org.ID, arg.Role).Scan(&userOrg.UserId, &userOrg.OrganizationId, &userOrg.Role, &userOrg.CreatedAt)
 	if err != nil {
 		return ReturnOrgUser{}, fmt.Errorf("insert user_organization link: %w", err)
+	}
+
+	// 3) Update user’s setup_status to "completed"
+	updateUserSetupQuery := `
+		UPDATE users
+		SET setup_status = 'completed'
+		WHERE id = $1
+	`
+	_, err = tx.Exec(ctx, updateUserSetupQuery, arg.UserId)
+	if err != nil {
+		return ReturnOrgUser{}, fmt.Errorf("update user setup_status: %w", err)
 	}
 
 	// 3) Commit if everything succeeded
