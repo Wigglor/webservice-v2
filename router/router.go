@@ -31,11 +31,21 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 	mux.HandleFunc("GET /api/users", handler.GetUsers)
 	mux.HandleFunc("GET /api/user/{id}", handler.GetUserById)
 	// mux.HandleFunc("POST /api/check-user/{subId}", handler.GetOrCreateUserBySubId)
-	mux.HandleFunc("POST /api/check-user", handler.GetOrCreateUserBySubId)
+	// mux.HandleFunc("POST /api/check-user", handler.GetOrCreateUserBySubId)
+	mux.Handle("POST /api/check-user",
+		middlewares.EnsureValidToken()(http.HandlerFunc(handler.GetOrCreateUserBySubId)),
+	)
+
 	mux.HandleFunc("POST /api/organization-user", handler.CreateOrganization)
 	// This route is only accessible if the user has a valid access_token.
 	mux.Handle("/api/private", middlewares.EnsureValidToken()(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token := r.Context().Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
+			fmt.Println(token.CustomClaims)
+			fmt.Println(token.RegisteredClaims)
+			fmt.Println(token.RegisteredClaims.Audience)
+			fmt.Println(token.RegisteredClaims.Subject)
+			fmt.Println(token.RegisteredClaims.Issuer)
 			// CORS Headers.
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set("Access-Control-Allow-Origin", "*")

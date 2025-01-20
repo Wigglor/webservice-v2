@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/Wigglor/webservice-v2/repository"
+	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
+	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -65,6 +67,12 @@ func (h *UserHandler) GetOrCreateUserBySubId(w http.ResponseWriter, r *http.Requ
 	// 	SubId              string `json:"subId"`
 	// }
 
+	claims, ok := r.Context().Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
+	if !ok {
+		http.Error(w, "Failed to get validated token from context", http.StatusUnauthorized)
+		return
+	}
+
 	var reqBody repository.CreateUserParams
 
 	// 2. Decode the JSON from the request body into that struct
@@ -74,23 +82,18 @@ func (h *UserHandler) GetOrCreateUserBySubId(w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// userSubIdStr := strings.TrimPrefix(r.URL.Path, "/api/check-user/")
-	// println(userSubIdStr)
-	// userId, err := strconv.ParseInt(userSubIdStr, 10, 32)
-	// println(userId)
-	// if err != nil {
-	// 	http.Error(w, "Invalid user ID", http.StatusBadRequest)
-	// 	return
 
-	// }
-	user, err := h.Repo.CheckUserBySubId(r.Context(), reqBody.SubId)
+	user, err := h.Repo.CheckUserBySubId(r.Context(), claims.RegisteredClaims.Subject)
+	subId := claims.RegisteredClaims.Subject
+	// user, err := h.Repo.CheckUserBySubId(r.Context(), reqBody.SubId)
 	if err != nil {
-		log.Printf("Failed to fetch user with Sub ID %s: %v", reqBody.SubId, err)
+		// log.Printf("Failed to fetch user with Sub ID %s: %v", reqBody.SubId, err)
+		log.Printf("Failed to fetch user with Sub ID %s: %v", claims.RegisteredClaims.Subject, err)
 		if errors.Is(err, pgx.ErrNoRows) {
 			log.Println("No rows error")
 			log.Println(pgx.ErrNoRows)
 
-			createdUser, err := h.Repo.QueryCreateUser(r.Context(), reqBody)
+			createdUser, err := h.Repo.QueryCreateUser(r.Context(), reqBody, subId)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return

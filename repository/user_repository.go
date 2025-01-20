@@ -124,7 +124,7 @@ WHERE
 }
 
 // func (m UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
-func (m *UserRepo) QueryCreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+func (m *UserRepo) QueryCreateUser(ctx context.Context, arg CreateUserParams, subId string) (User, error) {
 	row := m.db.QueryRow(ctx, `-- name: CreateUser :one
 INSERT INTO users (
   name,
@@ -147,7 +147,8 @@ RETURNING
 `,
 		arg.Name,
 		arg.Email,
-		arg.SubId,
+		// arg.SubId,
+		subId,
 		arg.VerificationStatus,
 		arg.SetupStatus,
 	)
