@@ -150,7 +150,8 @@ RETURNING
 		// arg.SubId,
 		subId,
 		arg.VerificationStatus,
-		arg.SetupStatus,
+		// arg.SetupStatus,
+		"in_progress", // this should always be in_progress at first since user has not yet set up organizations and user_organizations
 	)
 	var i User
 	err := row.Scan(
