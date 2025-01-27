@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -109,7 +110,33 @@ func (h *UserHandler) GetOrCreateUserBySubId(w http.ResponseWriter, r *http.Requ
 		// return
 		return
 	}
-	// log.Println(user)
+
+	if user.SetupStatus == "completed" {
+		println("status is completed")
+		userOrg, err := h.Repo.QueryOrganization(r.Context(), user.ID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println(userOrg)
+		type CombinedData struct {
+			User    repository.User           `json:"user"`
+			UserOrg []repository.Organization `json:"userOrg"`
+		}
+		combinedData := CombinedData{
+			User:    user,
+			UserOrg: userOrg,
+		}
+		fmt.Println(userOrg)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(combinedData); err != nil {
+			// if err := json.NewEncoder(w).Encode(reqBody); err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(user); err != nil {
 		// if err := json.NewEncoder(w).Encode(reqBody); err != nil {

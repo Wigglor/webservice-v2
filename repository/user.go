@@ -64,4 +64,5 @@ type UserRepository interface {
 	CheckUserBySubId(ctx context.Context, subId string) (User, error)
 	QueryCreateUser(ctx context.Context, arg CreateUserParams, subId string) (User, error)
 	QueryCreateOrganization(ctx context.Context, arg CreateOrganizationParams) (ReturnOrgUser, error)
+	QueryOrganization(ctx context.Context, id int32) ([]Organization, error)
 }

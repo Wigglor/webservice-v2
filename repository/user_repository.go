@@ -167,6 +167,68 @@ RETURNING
 	return i, err
 }
 
+func (m *UserRepo) QueryOrganization(ctx context.Context, id int32) ([]Organization, error) {
+	rows, err := m.db.Query(ctx, `
+SELECT 
+o.id, 
+    o.name,
+    o.subscription_id,
+    o.plan_type,
+    o.subscription_status,
+    o.next_billing_date,
+    o.created_at,
+    o.updated_at
+FROM user_organizations uo
+JOIN organizations o ON uo.organization_id = o.id
+WHERE uo.user_id = $1;
+`, id)
+	if err != nil {
+		return nil, fmt.Errorf("query error: %w", err)
+	}
+	defer rows.Close()
+	println("querying organizations")
+	println(rows)
+	// Prepare a slice to collect the results
+	var organizations []Organization
+	for rows.Next() {
+		var org Organization
+		err := rows.Scan(
+			&org.ID,
+			&org.Name,
+			&org.SubscriptionId,
+			&org.PlanType,
+			&org.SubscriptionStatus,
+			&org.NextBillingDate,
+			&org.CreatedAt,
+			&org.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan error: %w", err)
+		}
+		organizations = append(organizations, org)
+	}
+	fmt.Println(organizations)
+
+	// Check if there was an iteration error
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return organizations, nil
+	// var i Organization
+	// err := row.Scan(
+	// 	&i.ID,
+	// 	&i.Name,
+	// 	&i.SubscriptionId,
+	// 	&i.PlanType,
+	// 	&i.SubscriptionStatus,
+	// 	&i.NextBillingDate,
+	// 	&i.CreatedAt,
+	// 	&i.UpdatedAt,
+	// )
+	// return i, err
+}
+
 func (m *UserRepo) QueryCreateOrganization(ctx context.Context, arg CreateOrganizationParams) (ReturnOrgUser, error) {
 	tx, err := m.db.Begin(ctx)
 	if err != nil {

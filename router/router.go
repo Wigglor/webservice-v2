@@ -37,6 +37,7 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 	)
 
 	mux.HandleFunc("POST /api/organization-user", handler.CreateOrganization)
+	// mux.Handle("GET /api/organization-user/{id}", middlewares.EnsureValidToken()(http.HandlerFunc(handler.GetOrCreateUserBySubId)))
 	// This route is only accessible if the user has a valid access_token.
 	mux.Handle("/api/private", middlewares.EnsureValidToken()(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
