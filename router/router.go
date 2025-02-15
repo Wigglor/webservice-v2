@@ -35,6 +35,9 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 	mux.Handle("POST /api/check-user",
 		middlewares.EnsureValidToken()(http.HandlerFunc(handler.GetOrCreateUserBySubId)),
 	)
+	mux.Handle("POST /api/user-organization",
+		middlewares.EnsureValidToken()(http.HandlerFunc(handler.CreateUserForOrg)),
+	)
 
 	mux.HandleFunc("POST /api/organization-user", handler.CreateOrganization)
 	// mux.Handle("GET /api/organization-user/{id}", middlewares.EnsureValidToken()(http.HandlerFunc(handler.GetOrCreateUserBySubId)))

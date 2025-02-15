@@ -123,6 +123,20 @@ WHERE
 	return i, err
 }
 
+func (m *UserRepo) UpdateVerificationStatus(ctx context.Context, subId string) (bool, error) {
+	updateUserSetupQuery := `
+	UPDATE users
+	SET verification_status = TRUE
+	WHERE sub_id = $1
+	RETURNING verification_status
+`
+	row := m.db.QueryRow(ctx, updateUserSetupQuery, subId)
+
+	var verificationStatus bool
+	err := row.Scan(&verificationStatus)
+	return verificationStatus, err
+}
+
 // func (m UserRepo) QueryCreateUser(arg CreateUserParams) (User, error) {
 func (m *UserRepo) QueryCreateUser(ctx context.Context, arg CreateUserParams, subId string) (User, error) {
 	row := m.db.QueryRow(ctx, `-- name: CreateUser :one

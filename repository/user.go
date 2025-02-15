@@ -65,4 +65,5 @@ type UserRepository interface {
 	QueryCreateUser(ctx context.Context, arg CreateUserParams, subId string) (User, error)
 	QueryCreateOrganization(ctx context.Context, arg CreateOrganizationParams) (ReturnOrgUser, error)
 	QueryOrganization(ctx context.Context, id int32) ([]Organization, error)
+	UpdateVerificationStatus(ctx context.Context, subId string) (bool, error)
 }
