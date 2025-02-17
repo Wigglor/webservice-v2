@@ -13,6 +13,9 @@ import (
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
+	"github.com/clerk/clerk-sdk-go/v2"
+	clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
+	"github.com/clerk/clerk-sdk-go/v2/user"
 
 	// "github.com/auth0/go-jwt-middleware/v2/logging"
 
@@ -26,6 +29,7 @@ import (
 )
 
 func Routes(handler *handlers.UserHandler) http.Handler {
+	clerk.SetKey(os.Getenv("CLERK_SECRET_KEY"))
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/users", handler.GetUsers)
@@ -57,6 +61,24 @@ func Routes(handler *handlers.UserHandler) http.Handler {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"message":"Hello from a private endpoint! You need to be authenticated to see this message."}`))
+		}),
+	))
+	mux.Handle("/api/private-clerk", clerkhttp.WithHeaderAuthorization()(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims, ok := clerk.SessionClaimsFromContext(r.Context())
+			if !ok {
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(`{"access": "unauthorized"}`))
+				return
+			}
+
+			usr, err := user.Get(r.Context(), claims.Subject)
+			if err != nil {
+				// handle the error
+			}
+			fmt.Fprintf(w, `{"user_id": "%s", "user_banned": "%t"}`, usr.ID, usr.Banned)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message":"Hello from a private Clerk endpoint! You need to be authenticated with Clerk to see this message."}`))
 		}),
 	))
 	mux.Handle("/api/private2", ValidateJWT(http.HandlerFunc(helloAuth)))
